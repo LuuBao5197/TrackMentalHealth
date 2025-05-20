@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -26,10 +27,10 @@ public class ChatSession {
     private fpt.aptech.trackmentalhealth.entities.Psychologist psychologistCode;
 
     @Column(name = "start_time")
-    private Instant startTime;
+    private LocalDateTime startTime;
 
     @Column(name = "end_time")
-    private Instant endTime;
+    private LocalDateTime endTime;
 
     @Size(max = 255)
     @Nationalized

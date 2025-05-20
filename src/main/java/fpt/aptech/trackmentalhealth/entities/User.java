@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
 @Getter
 @Setter
@@ -69,7 +70,7 @@ public class User {
     private String address;
 
     @Column(name = "dob")
-    private Instant dob;
+    private LocalDate dob;
 
     @Size(max = 255)
     @Nationalized
