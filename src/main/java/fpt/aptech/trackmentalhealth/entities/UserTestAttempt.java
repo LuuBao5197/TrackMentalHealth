@@ -17,7 +17,7 @@ public class UserTestAttempt {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private fpt.aptech.trackmentalhealth.entities.User user;
+    private Users users;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_id")

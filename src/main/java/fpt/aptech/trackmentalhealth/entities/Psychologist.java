@@ -25,8 +25,8 @@ public class Psychologist {
     private Double experienceYears;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "userID")
-    private fpt.aptech.trackmentalhealth.entities.User userID;
+    @JoinColumn(name = "usersID")
+    private Users usersID;
 
     @Column(name = "bio")
     private Integer bio;

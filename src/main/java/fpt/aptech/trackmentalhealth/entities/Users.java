@@ -1,13 +1,15 @@
 package fpt.aptech.trackmentalhealth.entities;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
-import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -15,8 +17,9 @@ import java.time.LocalDate;
 @Table(name = "Users", uniqueConstraints = {
         @UniqueConstraint(name = "UQ__Users__F3DBC5727BBCF3A7", columnNames = {"username"})
 })
-public class User {
+public class Users {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -29,6 +32,12 @@ public class User {
     @Nationalized
     @Column(name = "password")
     private String password;
+
+    @Size(max = 255)
+    @Nationalized
+    @Email(message = "Email is invalid")
+    @Column(name = "email")
+    private String email;
 
     @Size(max = 255)
     @Nationalized
@@ -55,9 +64,13 @@ public class User {
     @Column(name = "otp")
     private String otp;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "role")
-    private Role role;
+    @Future(message = "OTP expiry must be in the future")
+    @Column(name = "otpExpiry")
+    private LocalDateTime otpExpiry;
+
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_Id")
+    private Role roleId;
 
     @Size(max = 255)
     @Nationalized

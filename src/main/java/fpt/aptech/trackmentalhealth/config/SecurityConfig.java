@@ -1,0 +1,90 @@
+package fpt.aptech.trackmentalhealth.config;
+
+import fpt.aptech.trackmentalhealth.entities.Users;
+import fpt.aptech.trackmentalhealth.filter.JwtAuthenticationFilter;
+import fpt.aptech.trackmentalhealth.repositories.LoginRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.NoOpPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
+@Configuration
+public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private LoginRepository loginRepository;
+
+    @Bean
+    public UserDetailsService userDetailsService() {
+        return email -> {
+            Users user = loginRepository.findByEmail(email);
+            if (user == null) {
+                throw new UsernameNotFoundException("User not found");
+            }
+            return User.builder()
+                    .username(user.getEmail())  // Trả về email làm username
+                    .password(user.getPassword())
+                    .roles(user.getRoleId().getRoleName())
+                    .build();
+        };
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return NoOpPasswordEncoder.getInstance();
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService());
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
+            throws Exception {
+        return config.getAuthenticationManager();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/users/login",
+                                "/api/users/register",
+                                "/api/users/forgot-password",
+                                "/api/users/verify-otp",
+                                "/api/users/reset-password"
+                        ).permitAll()
+                        .requestMatchers("/index").hasRole("ADMIN")
+                        .requestMatchers("/user").hasRole("USER")
+                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
+                        .anyRequest().authenticated()
+                );
+
+        // Thêm JWT filter trước filter xác thực mặc định
+        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+}

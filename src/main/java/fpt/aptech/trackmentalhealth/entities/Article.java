@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -31,7 +30,7 @@ public class Article {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "author_id")
-    private fpt.aptech.trackmentalhealth.entities.User author;
+    private Users author;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
