@@ -5,8 +5,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
 
 @Getter
 @Setter
@@ -19,7 +17,7 @@ public class Mood {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private fpt.aptech.trackmentalhealth.entities.User user;
+    private Users users;
 
     @Column(name = "\"date\"")
     private LocalDate date;
