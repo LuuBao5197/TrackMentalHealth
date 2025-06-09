@@ -38,7 +38,7 @@ public class UserServiceImp implements UserService {
     public String loginUsers(UserDTO userDTO) {
         Users users = loginRepository.findByEmail(userDTO.getEmail());
         if (users != null && passwordEncoder.matches(userDTO.getPassword(), users.getPassword())) {
-            return jwtUtils.generateToken(users.getUsername()); // trả về JWT token
+            return jwtUtils.generateToken(users.getEmail()); // trả về JWT token
         }
         return null; // login thất bại
     }

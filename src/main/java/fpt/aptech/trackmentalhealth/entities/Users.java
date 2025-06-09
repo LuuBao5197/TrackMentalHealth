@@ -10,6 +10,8 @@ import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,6 +21,8 @@ import java.time.LocalDateTime;
 })
 public class Users {
     @Id
+    //ID tự tăng để em làm tính năng phê duyệt của admin, anh em cho tự tăng nhé
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
@@ -67,7 +71,8 @@ public class Users {
     @Column(name = "otpExpiry")
     private LocalDateTime otpExpiry;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    //EAGER để fetch dữ liệu, ko dùng LAZY
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "role")
     private Role roleId;
 
@@ -88,6 +93,14 @@ public class Users {
     @Nationalized
     @Column(name = "gender")
     private String gender;
+
+    //Liên kết chứng chỉ với user
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Certificate> certificates = new ArrayList<>();
+
+    //Update trạng thái làm chức năng phê duyệt
+    @Column(name = "is_approved")
+    private Boolean isApproved = false;
 
 
 }
