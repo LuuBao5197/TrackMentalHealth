@@ -31,17 +31,25 @@ public class SecurityConfig {
     @Bean
     public UserDetailsService userDetailsService() {
         return email -> {
+            System.out.println("Tìm user theo email: " + email);
             Users users = loginRepository.findByEmail(email);
             if (users == null) {
+                System.out.println("Không tìm thấy user với email: " + email);
                 throw new UsernameNotFoundException("User not found");
             }
+
+//            if (Boolean.FALSE.equals(users.getIsApproved())) {
+//                throw new UsernameNotFoundException("Account not approved by admin");
+//            }
+
             return User.builder()
-                    .username(users.getEmail())  // Trả về email làm username
+                    .username(users.getEmail())
                     .password(users.getPassword())
                     .roles(users.getRoleId().getRoleName())
                     .build();
         };
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -73,11 +81,14 @@ public class SecurityConfig {
                                 "/api/users/register",
                                 "/api/users/forgot-password",
                                 "/api/users/verify-otp",
-                                "/api/users/reset-password"
+                                "/api/users/reset-password",
+                                "/api/users/pending-register" // nếu có
                         ).permitAll()
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
                         .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
+                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
+                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
                         .anyRequest().authenticated()
                 );
 
