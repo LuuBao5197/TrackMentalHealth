@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -14,6 +15,8 @@ import java.util.Set;
 @Setter
 @Entity
 @Table(name = "Lessons")
+
+
 public class Lesson {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
