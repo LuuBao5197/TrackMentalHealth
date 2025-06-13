@@ -6,7 +6,6 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 
 @Getter
@@ -24,7 +23,7 @@ public class Review {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private fpt.aptech.trackmentalhealth.entities.User user;
+    private Users users;
 
     @Size(max = 255)
     @Nationalized

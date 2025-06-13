@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -16,7 +17,8 @@ public class TestQuestion {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_id")
-    private fpt.aptech.trackmentalhealth.entities.Test test;
+    @JsonBackReference
+    private Test test;
 
     @Lob
     @Column(name = "question_text")

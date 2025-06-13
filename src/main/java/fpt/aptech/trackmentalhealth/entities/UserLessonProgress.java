@@ -9,31 +9,24 @@ import java.time.Instant;
 @Getter
 @Setter
 @Entity
-@Table(name = "UserTestAttempts")
-public class UserTestAttempt {
+public class UserLessonProgress {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private Users users;
+    private ContentCreator user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "test_id")
-    private Test test;
+    @JoinColumn(name = "lesson_id")
+    private Lesson lesson;
 
-    @Column(name = "started_at")
-    private Instant startedAt;
+    @Column(name = "step_completed")
+    private Integer stepCompleted;
 
     @Column(name = "completed_at")
     private Instant completedAt;
-
-    @Column(name = "total_score")
-    private Integer totalScore;
-
-    @Lob
-    @Column(name = "result_summary")
-    private String resultSummary;
 
 }

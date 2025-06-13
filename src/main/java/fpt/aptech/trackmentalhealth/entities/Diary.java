@@ -17,7 +17,7 @@ public class Diary {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
-    private fpt.aptech.trackmentalhealth.entities.User user;
+    private Users users;
 
     @Column(name = "\"date\"")
     private LocalDate date;

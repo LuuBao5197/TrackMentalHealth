@@ -15,7 +15,7 @@ public class UserTestAnswer {
     @MapsId("attemptId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "attempt_id", nullable = false)
-    private fpt.aptech.trackmentalhealth.entities.User attempt;
+    private Users attempt;
 
     @MapsId("questionId")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
