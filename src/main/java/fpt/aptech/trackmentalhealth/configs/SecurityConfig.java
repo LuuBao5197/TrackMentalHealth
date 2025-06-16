@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.User;
@@ -18,8 +19,11 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 
 @Configuration
+@EnableMethodSecurity(prePostEnabled = true)
+
 public class SecurityConfig {
 
     @Autowired
@@ -45,7 +49,7 @@ public class SecurityConfig {
             return User.builder()
                     .username(users.getEmail())
                     .password(users.getPassword())
-                    .roles(users.getRoleId().getRoleName())
+                    .roles(users.getRoleId().getRoleName().toUpperCase())
                     .build();
         };
     }
@@ -82,13 +86,15 @@ public class SecurityConfig {
                                 "/api/users/forgot-password",
                                 "/api/users/verify-otp",
                                 "/api/users/reset-password",
-                                "/api/users/pending-register" // nếu có
+                                "/api/users/pending-register",
+                                "/uploads/avatars/**"
                         ).permitAll()
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
                         .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
                         .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
+                        .requestMatchers("/api/users/edit-profile").authenticated()
                         .anyRequest().authenticated()
                 );
 
@@ -97,4 +103,5 @@ public class SecurityConfig {
 
         return http.build();
     }
+
 }

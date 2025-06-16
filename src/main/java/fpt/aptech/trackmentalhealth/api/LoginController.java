@@ -2,6 +2,7 @@ package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
+import fpt.aptech.trackmentalhealth.entities.EditProfileDTO;
 import fpt.aptech.trackmentalhealth.entities.PendingUserRegistration;
 import fpt.aptech.trackmentalhealth.entities.Role;
 import fpt.aptech.trackmentalhealth.entities.Users;
@@ -11,6 +12,7 @@ import fpt.aptech.trackmentalhealth.services.EmailService;
 import fpt.aptech.trackmentalhealth.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -163,6 +167,45 @@ public class LoginController {
                 .orElseGet(() -> ResponseEntity.status(404).body(null));
     }
 
+    @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'PSYCHOLOGIST', 'TEST_DESIGNER', 'CONTENT_CREATOR')")
+    public ResponseEntity<?> editProfile(
+            @ModelAttribute EditProfileDTO request,
+            Authentication authentication
+    ) {
+        try {
+            authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String email = userDetails.getUsername();
+
+            Optional<Users> optionalUser = userService.findByEmail(email);
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            Users user = optionalUser.get();
+
+            // Cập nhật thông tin
+            user.setFullname(request.getFullname());
+            user.setAddress(request.getAddress());
+            user.setDob(request.getDob());
+            user.setGender(request.getGender());
+
+            // Nếu có file avatar mới
+            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                // Giả sử bạn lưu file dưới dạng path, hoặc base64, hoặc ghi ra file system
+                String avatarPath = saveAvatarFile(request.getAvatar(), user.getId());
+                user.setAvatar(avatarPath);
+            }
+
+            loginRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Update failed", "details", e.getMessage()));
+        }
+    }
+
     // === FORGOT PASSWORD ===
     @PostMapping("/forgot-password")
     public ResponseEntity<?> forgotPassword(@RequestParam String email) {
@@ -218,4 +261,17 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
+
+    private String saveAvatarFile(MultipartFile file, Integer userId) throws IOException {
+        String filename = "avatar_" + userId + "_" + file.getOriginalFilename();
+        String path = "uploads/avatars/" + filename;
+
+        File dir = new File("uploads/avatars");
+        if (!dir.exists()) dir.mkdirs();
+
+        File avatarFile = new File(path);
+        file.transferTo(avatarFile);
+        return path;
+    }
+
 }
