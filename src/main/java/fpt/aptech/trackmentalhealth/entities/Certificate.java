@@ -20,7 +20,7 @@ public class Certificate {
 
     @Lob
     @Column(name = "image", nullable = false)
-    private byte[] image; // chứa file ảnh chứng chỉ
+    private String image; // chứa file ảnh chứng chỉ
 
     @Size(max = 255)
     @Column(name = "description")
