@@ -85,8 +85,8 @@ public class SecurityConfig {
                                 "/api/users/forgot-password",
                                 "/api/users/verify-otp",
                                 "/api/users/reset-password",
-                                "/api/users/pending-register",
-                                "/uploads/avatars/**"
+                                "/api/users/pending-registrations",
+                                "/api/users/approve/**"
                         ).permitAll()
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")

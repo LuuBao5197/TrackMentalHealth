@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.services;
+package fpt.aptech.trackmentalhealth.service.user;
 
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.Users;
