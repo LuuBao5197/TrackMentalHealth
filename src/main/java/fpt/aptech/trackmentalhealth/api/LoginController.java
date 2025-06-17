@@ -2,15 +2,18 @@ package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
+import fpt.aptech.trackmentalhealth.entities.EditProfileDTO;
 import fpt.aptech.trackmentalhealth.entities.PendingUserRegistration;
 import fpt.aptech.trackmentalhealth.entities.Role;
 import fpt.aptech.trackmentalhealth.entities.Users;
-import fpt.aptech.trackmentalhealth.repository.LoginRepository;
-import fpt.aptech.trackmentalhealth.repository.PendingUserRepository;
+import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
 import fpt.aptech.trackmentalhealth.services.EmailService;
 import fpt.aptech.trackmentalhealth.services.UserService;
+import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +21,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -41,6 +46,11 @@ public class LoginController {
 
     @Autowired
     private PendingUserRepository pendingUserRepository;
+
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    private MultipartFile avatar;
 
     // === REGISTER ===
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
@@ -77,6 +87,11 @@ public class LoginController {
             pending.setFullName(request.getFullName());
             pending.setRoleId(roleId);
             pending.setSubmittedAt(LocalDateTime.now());
+
+            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                pending.setAvatar(avatarUrl);
+            }
 
             // Lưu chứng chỉ nếu có
             if (requiresCertificate) {
@@ -159,8 +174,54 @@ public class LoginController {
 
         Optional<Users> userOpt = userService.findByEmail(email);
         return userOpt
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(404).body(null));
+                .map(user -> ResponseEntity.ok(Map.of(
+                        "fullname", user.getFullname(),
+                        "email", user.getEmail(),
+                        "dob", user.getDob(),
+                        "gender", user.getGender(),
+                        "avatar", user.getAvatar(),
+                        "address", user.getAddress()
+                )))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "User not found")));
+
+    }
+
+    @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'PSYCHOLOGIST', 'TEST_DESIGNER', 'CONTENT_CREATOR')")
+    public ResponseEntity<?> editProfile(
+            @ModelAttribute EditProfileDTO request,
+            Authentication authentication
+    ) {
+        try {
+            authentication = SecurityContextHolder.getContext().getAuthentication();
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+            String email = userDetails.getUsername();
+
+            Optional<Users> optionalUser = userService.findByEmail(email);
+            if (optionalUser.isEmpty()) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            Users user = optionalUser.get();
+
+            // Cập nhật thông tin
+            user.setFullname(request.getFullname());
+            user.setAddress(request.getAddress());
+            user.setDob(request.getDob());
+            user.setGender(request.getGender());
+
+            // Nếu có file avatar mới
+            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                user.setAvatar(avatarUrl);
+            }
+
+            loginRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "Update failed", "details", e.getMessage()));
+        }
     }
 
     // === FORGOT PASSWORD ===
@@ -218,4 +279,6 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
+
+
 }
