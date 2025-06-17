@@ -19,6 +19,7 @@ public class PendingUserRegistration {
     private String password;
     private String fullName;
     private Integer roleId;
+    private String avatar;
 
     @Lob
     private byte[] certificate1;

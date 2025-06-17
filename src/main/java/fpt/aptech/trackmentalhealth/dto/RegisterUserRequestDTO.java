@@ -10,4 +10,5 @@ public class RegisterUserRequestDTO {
     private String fullName;
     private Integer roleId;
     private MultipartFile[] certificates;
+    private MultipartFile avatar;
 }
