@@ -6,10 +6,11 @@ import fpt.aptech.trackmentalhealth.entities.EditProfileDTO;
 import fpt.aptech.trackmentalhealth.entities.PendingUserRegistration;
 import fpt.aptech.trackmentalhealth.entities.Role;
 import fpt.aptech.trackmentalhealth.entities.Users;
-import fpt.aptech.trackmentalhealth.repository.LoginRepository;
-import fpt.aptech.trackmentalhealth.repository.PendingUserRepository;
+import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
 import fpt.aptech.trackmentalhealth.services.EmailService;
 import fpt.aptech.trackmentalhealth.services.UserService;
+import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -46,6 +47,11 @@ public class LoginController {
     @Autowired
     private PendingUserRepository pendingUserRepository;
 
+    @Autowired
+    private CloudinaryService cloudinaryService;
+
+    private MultipartFile avatar;
+
     // === REGISTER ===
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
     public ResponseEntity<?> register(@ModelAttribute RegisterUserRequestDTO request) {
@@ -81,6 +87,11 @@ public class LoginController {
             pending.setFullName(request.getFullName());
             pending.setRoleId(roleId);
             pending.setSubmittedAt(LocalDateTime.now());
+
+            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                pending.setAvatar(avatarUrl);
+            }
 
             // Lưu chứng chỉ nếu có
             if (requiresCertificate) {
@@ -163,8 +174,16 @@ public class LoginController {
 
         Optional<Users> userOpt = userService.findByEmail(email);
         return userOpt
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.status(404).body(null));
+                .map(user -> ResponseEntity.ok(Map.of(
+                        "fullname", user.getFullname(),
+                        "email", user.getEmail(),
+                        "dob", user.getDob(),
+                        "gender", user.getGender(),
+                        "avatar", user.getAvatar(),
+                        "address", user.getAddress()
+                )))
+                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "User not found")));
+
     }
 
     @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
@@ -193,9 +212,8 @@ public class LoginController {
 
             // Nếu có file avatar mới
             if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
-                // Giả sử bạn lưu file dưới dạng path, hoặc base64, hoặc ghi ra file system
-                String avatarPath = saveAvatarFile(request.getAvatar(), user.getId());
-                user.setAvatar(avatarPath);
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                user.setAvatar(avatarUrl);
             }
 
             loginRepository.save(user);
@@ -262,16 +280,5 @@ public class LoginController {
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
 
-    private String saveAvatarFile(MultipartFile file, Integer userId) throws IOException {
-        String filename = "avatar_" + userId + "_" + file.getOriginalFilename();
-        String path = "uploads/avatars/" + filename;
-
-        File dir = new File("uploads/avatars");
-        if (!dir.exists()) dir.mkdirs();
-
-        File avatarFile = new File(path);
-        file.transferTo(avatarFile);
-        return path;
-    }
 
 }

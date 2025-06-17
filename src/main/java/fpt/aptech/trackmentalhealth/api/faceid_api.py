@@ -1,42 +1,73 @@
 from flask import Flask, request, jsonify
 import face_recognition
 import numpy as np
-import io
+import os
 from PIL import Image
+import io
 
 app = Flask(__name__)
 
-# Ảnh mẫu (khuôn mặt đăng ký sẵn)
-KNOWN_FACE_ENCODINGS = []
-KNOWN_FACE_NAMES = []
+# Cấu hình thư mục lưu trữ
+ENCODINGS_DIR = "face_encodings"
+if not os.path.exists(ENCODINGS_DIR):
+    os.makedirs(ENCODINGS_DIR)
 
-# Giả sử ta có 1 ảnh khuôn mặt mẫu
-def load_known_faces():
-    image = face_recognition.load_image_file("known_user.jpg")
-    encoding = face_recognition.face_encodings(image)[0]
-    KNOWN_FACE_ENCODINGS.append(encoding)
-    KNOWN_FACE_NAMES.append("user@example.com")  # mapping to email or id
+
+def get_encoding_path(email):
+    """Trả về đường dẫn tệp encoding của người dùng"""
+    safe_email = email.replace("@", "_at_").replace(".", "_")
+    return os.path.join(ENCODINGS_DIR, f"{safe_email}.npy")
+
+
+@app.route('/register-face', methods=['POST'])
+def register_face():
+    """Đăng ký khuôn mặt cho người dùng"""
+    email = request.form.get("email")
+    file = request.files.get("image")
+
+    if not email or not file:
+        return jsonify({"error": "Email and image are required"}), 400
+
+    image = face_recognition.load_image_file(file)
+    encodings = face_recognition.face_encodings(image)
+
+    if len(encodings) == 0:
+        return jsonify({"error": "No face detected"}), 400
+
+    encoding = encodings[0]
+    path = get_encoding_path(email)
+    np.save(path, encoding)
+
+    return jsonify({"message": f"Face registered for {email}"}), 200
+
 
 @app.route('/verify-face', methods=['POST'])
 def verify_face():
-    if 'image' not in request.files:
-        return jsonify({"error": "No image file"}), 400
+    """Xác thực khuôn mặt"""
+    file = request.files.get("image")
 
-    file = request.files['image']
-    img = face_recognition.load_image_file(file)
+    if not file:
+        return jsonify({"error": "No image provided"}), 400
 
-    unknown_encodings = face_recognition.face_encodings(img)
+    unknown_image = face_recognition.load_image_file(file)
+    unknown_encodings = face_recognition.face_encodings(unknown_image)
+
     if len(unknown_encodings) == 0:
         return jsonify({"error": "No face detected"}), 400
 
-    for unknown in unknown_encodings:
-        results = face_recognition.compare_faces(KNOWN_FACE_ENCODINGS, unknown)
-        if True in results:
-            index = results.index(True)
-            return jsonify({"verified": True, "email": KNOWN_FACE_NAMES[index]})
+    unknown_encoding = unknown_encodings[0]
 
-    return jsonify({"verified": False})
+    # Lặp qua tất cả encoding đã lưu
+    for filename in os.listdir(ENCODINGS_DIR):
+        if filename.endswith(".npy"):
+            known_encoding = np.load(os.path.join(ENCODINGS_DIR, filename))
+            result = face_recognition.compare_faces([known_encoding], unknown_encoding)[0]
+            if result:
+                email = filename.replace("_at_", "@").replace("_", ".").replace(".npy", "")
+                return jsonify({"verified": True, "email": email})
+
+    return jsonify({"verified": False}), 401
+
 
 if __name__ == '__main__':
-    load_known_faces()
     app.run(debug=True, port=5001)

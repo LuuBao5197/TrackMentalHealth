@@ -2,7 +2,7 @@ package fpt.aptech.trackmentalhealth.services;
 
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.Users;
-import fpt.aptech.trackmentalhealth.repository.LoginRepository;
+import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
 import fpt.aptech.trackmentalhealth.ultis.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;

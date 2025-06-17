@@ -1,11 +1,9 @@
-package fpt.aptech.trackmentalhealth.service.doctor;
+package fpt.aptech.trackmentalhealth.service.test;
 
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
 import fpt.aptech.trackmentalhealth.entities.TestResult;
-import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
 

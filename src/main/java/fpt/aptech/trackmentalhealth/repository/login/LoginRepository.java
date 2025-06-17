@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.repository;
+package fpt.aptech.trackmentalhealth.repository.login;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
