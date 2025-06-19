@@ -2,8 +2,8 @@ package fpt.aptech.trackmentalhealth.service.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatMessage;
 import fpt.aptech.trackmentalhealth.entities.ChatSession;
-import fpt.aptech.trackmentalhealth.repository.ChatRepository.ChatMessagesRepository;
-import fpt.aptech.trackmentalhealth.repository.ChatRepository.ChatSessionRepository;
+import fpt.aptech.trackmentalhealth.repository.chat.ChatMessagesRepository;
+import fpt.aptech.trackmentalhealth.repository.chat.ChatSessionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -41,7 +41,7 @@ public class ChatServiceImp implements ChatService {
     }
 
     @Override
-    public List<ChatSession> getChatSessionsByPsyId(int PsyId) {
-        return chatSessionRepository.getChatSessionByPsyId(PsyId);
+    public List<ChatSession> getChatSessionByUserId(int id) {
+        return chatSessionRepository.getChatSessionByUserId(id);
     }
 }
