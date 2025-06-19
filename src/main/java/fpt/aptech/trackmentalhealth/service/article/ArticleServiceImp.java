@@ -1,5 +1,7 @@
 package fpt.aptech.trackmentalhealth.service.article;
 
+import fpt.aptech.trackmentalhealth.dto.ArticleDTO;
+import fpt.aptech.trackmentalhealth.dto.ExerciseDTO;
 import fpt.aptech.trackmentalhealth.entities.Article;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
 import fpt.aptech.trackmentalhealth.repository.article.ArticleRepository;
@@ -17,25 +19,27 @@ public class ArticleServiceImp implements ArticleService {
     }
 
     @Override
-    public List<Article> getArticles() {
-        return articleRepository.findAll();
+    public List<ArticleDTO> getArticleDTOs() {
+        List<Article> exercises = articleRepository.findAll();
+        return exercises.stream().map(ArticleDTO::new).toList();
     }
 
     @Override
-    public Article getArticle(Integer id) {
-        return articleRepository.findById(id).orElseThrow(()->new RuntimeException("Article not found"));
+    public ArticleDTO getArticleDTOById(Integer id) {
+        Article article = articleRepository.findById(id).orElseThrow(() -> new RuntimeException("Article not found"));
+        return new ArticleDTO(article);
     }
 
     @Override
-    public Article createArticle(Article article) {
-        articleRepository.save(article);
-        return article;
+    public ArticleDTO createArticleDTO(Article article) {
+        Article savedArticle = articleRepository.save(article);
+        return new ArticleDTO(savedArticle);
     }
 
     @Override
-    public Article updateArticle(Integer id, Article article) {
-        articleRepository.save(article);
-        return article;
+    public ArticleDTO updateArticleDTO(Integer id, Article article) {
+        Article updatedArticle = articleRepository.save(article);
+        return new ArticleDTO(updatedArticle);
     }
 
     @Override

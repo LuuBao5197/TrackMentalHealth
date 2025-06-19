@@ -27,21 +27,23 @@ public class LessonServiceImp implements LessonService {
     }
 
     @Override
-    public Lesson getLesson(Integer id) {
-        return lessonRepository.findById(id).orElseThrow(()->new RuntimeException("Lesson not found"));
+    public LessonDTO getLessonDTOById(Integer id) {
+        Lesson lesson = lessonRepository.findById(id).orElseThrow(() -> new RuntimeException("Lesson not found"));
+        return new LessonDTO(lesson);
     }
 
     @Override
-    public Lesson createLesson(Lesson lesson) {
-        lessonRepository.save(lesson);
-        return lesson;
+    public LessonDTO createLessonDTO(Lesson lesson) {
+        Lesson savedLesson = lessonRepository.save(lesson);
+        return new LessonDTO(savedLesson);
     }
 
     @Override
-    public Lesson updateLesson(Integer id, Lesson lesson) {
-        lessonRepository.save(lesson);
-        return lesson;
+    public LessonDTO updateLessonDTO(Integer id, Lesson lesson) {
+        Lesson updatedLesson = lessonRepository.save(lesson);
+        return new LessonDTO(updatedLesson);
     }
+
 
     @Override
     public void deleteLesson(Integer id) {

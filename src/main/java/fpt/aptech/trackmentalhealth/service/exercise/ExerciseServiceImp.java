@@ -1,10 +1,8 @@
 package fpt.aptech.trackmentalhealth.service.exercise;
 
+import fpt.aptech.trackmentalhealth.dto.ExerciseDTO;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
-import fpt.aptech.trackmentalhealth.entities.Lesson;
 import fpt.aptech.trackmentalhealth.repository.exercise.ExerciseRepository;
-import fpt.aptech.trackmentalhealth.repository.lesson.LessonRepository;
-import fpt.aptech.trackmentalhealth.repository.lesson.LessonStepRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -18,25 +16,27 @@ public class ExerciseServiceImp implements ExerciseService {
     }
 
     @Override
-    public List<Exercise> getExercises() {
-        return exerciseRepository.findAll();
+    public List<ExerciseDTO> getExerciseDTOs() {
+        List<Exercise> exercises = exerciseRepository.findAll();
+        return exercises.stream().map(ExerciseDTO::new).toList();
     }
 
     @Override
-    public Exercise getExercise(Integer id) {
-        return exerciseRepository.findById(id).orElseThrow(()->new RuntimeException("Exercise not found"));
+    public ExerciseDTO getExerciseDTOById(Integer id) {
+        Exercise exercise = exerciseRepository.findById(id).orElseThrow(() -> new RuntimeException("Exercise not found"));
+        return new ExerciseDTO(exercise);
     }
 
     @Override
-    public Exercise createExercise(Exercise exercise) {
-        exerciseRepository.save(exercise);
-        return exercise;
+    public ExerciseDTO createExerciseDTO(Exercise exercise) {
+        Exercise savedExercise = exerciseRepository.save(exercise);
+        return new ExerciseDTO(savedExercise);
     }
 
     @Override
-    public Exercise updateExercise(Integer id, Exercise exercise) {
-        exerciseRepository.save(exercise);
-        return exercise;
+    public ExerciseDTO updateExerciseDTO(Integer id, Exercise exercise) {
+        Exercise updatedExercise = exerciseRepository.save(exercise);
+        return new ExerciseDTO(updatedExercise);
     }
 
     @Override
