@@ -8,8 +8,8 @@ import fpt.aptech.trackmentalhealth.entities.Role;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
 import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
-import fpt.aptech.trackmentalhealth.services.EmailService;
-import fpt.aptech.trackmentalhealth.services.UserService;
+import fpt.aptech.trackmentalhealth.service.user.EmailService;
+import fpt.aptech.trackmentalhealth.service.user.UserService;
 import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -21,8 +21,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Optional;
@@ -166,27 +164,6 @@ public class LoginController {
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
-    // === PROFILE ===
-    @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(Authentication authentication) {
-        authentication = SecurityContextHolder.getContext().getAuthentication();
-        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
-        String email = userDetails.getUsername(); // Lấy tên người dùng đúng cách
-
-        Optional<Users> userOpt = userService.findByEmail(email);
-        return userOpt
-                .map(user -> ResponseEntity.ok(Map.of(
-                        "fullname", user.getFullname(),
-                        "email", user.getEmail(),
-                        "dob", user.getDob(),
-                        "gender", user.getGender(),
-                        "avatar", user.getAvatar(),
-                        "address", user.getAddress()
-                )))
-                .orElseGet(() -> ResponseEntity.status(404).body(Map.of("error", "User not found")));
-
-    }
-
     @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'PSYCHOLOGIST', 'TEST_DESIGNER', 'CONTENT_CREATOR')")
     public ResponseEntity<?> editProfile(
@@ -237,8 +214,7 @@ public class LoginController {
         users.setOtp(otp);
         users.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
         loginRepository.save(users);
-        emailService.sendOtpEmail(users.getUsername(), otp);
-
+        emailService.sendOtpEmail(users.getEmail(), otp);
         return ResponseEntity.ok(Map.of("message", "OTP has been sent to your email"));
     }
 

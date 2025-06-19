@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.ultis;
 
+import fpt.aptech.trackmentalhealth.entities.Users;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -15,11 +16,12 @@ import java.util.Date;
 public class JwtUtils {
     private final String secret = "AIzaSyBFnrG-ATKD6vqtBPyZYXIKfBdEP0I8V2A";
 
-    public String generateToken(String username) {
+    public String generateToken(String username, Users users) {
         return Jwts.builder()
                 .setSubject(username)
+                .claim("roleId", users.getRoleId())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // Token có hiệu lực 10 giờ
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
                 .signWith(secretToKey(secret))
                 .compact();
     }
