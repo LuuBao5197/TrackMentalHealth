@@ -1,10 +1,11 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Data;
 
 import java.time.LocalDateTime;
-
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Entity
 @Data
 public class Appointment {
@@ -22,11 +23,11 @@ public class Appointment {
     private String status;
 
     @ManyToOne
-    @JoinColumn(name = "user")
+    @JoinColumn(name = "userid")
     private Users user;
 
     @ManyToOne
-    @JoinColumn(name = "psychologist")
+    @JoinColumn(name = "psychologistid")
     private Psychologist psychologist;
 
     @Column(name = "note")
