@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.services;
+package fpt.aptech.trackmentalhealth.service.user;
 
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.Users;
@@ -38,7 +38,7 @@ public class UserServiceImp implements UserService {
     public String loginUsers(UserDTO userDTO) {
         Users users = loginRepository.findByEmail(userDTO.getEmail());
         if (users != null && passwordEncoder.matches(userDTO.getPassword(), users.getPassword())) {
-            return jwtUtils.generateToken(users.getEmail()); // trả về JWT token
+            return jwtUtils.generateToken(users.getEmail(), users); // trả về JWT token
         }
         return null; // login thất bại
     }

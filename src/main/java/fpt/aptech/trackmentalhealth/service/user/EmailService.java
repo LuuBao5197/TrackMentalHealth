@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.services;
+package fpt.aptech.trackmentalhealth.service.user;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.SimpleMailMessage;
@@ -13,8 +13,8 @@ public class EmailService {
 
     public void sendOtpEmail(String toEmail, String otp) {
         try {
-            String normalizedEmail = toEmail.trim().toLowerCase(); // Chuẩn hóa email
-            System.out.println("Sending OTP to: " + normalizedEmail + " | OTP: " + otp); // log
+            String normalizedEmail = toEmail.trim().toLowerCase();
+            System.out.println("Sending OTP to: " + normalizedEmail + " | OTP: " + otp);
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(normalizedEmail);
             message.setSubject("OTP to recover password");
