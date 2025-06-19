@@ -1,8 +1,10 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 
 @Getter
 @Setter
