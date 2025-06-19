@@ -1,7 +1,10 @@
 package fpt.aptech.trackmentalhealth.api;
 
 
+import fpt.aptech.trackmentalhealth.dto.ExerciseDTO;
+import fpt.aptech.trackmentalhealth.dto.LessonDTO;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
+import fpt.aptech.trackmentalhealth.entities.Lesson;
 import fpt.aptech.trackmentalhealth.service.exercise.ExerciseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,23 +21,26 @@ public class ExerciseController {
 
     // API CUA Exercise //
     @GetMapping("/")
-    public ResponseEntity<List<Exercise>> getExercises() {
-        List<Exercise> Exercises =  exerciseService.getExercises();
-        return ResponseEntity.ok().body(Exercises);
+    public ResponseEntity<List<ExerciseDTO>> getAllExercises() {
+        List<ExerciseDTO> exercises = exerciseService.getExerciseDTOs();
+        return ResponseEntity.ok(exercises);
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Exercise> getExerciseById(@PathVariable Integer id) {
-        Exercise exercise = exerciseService.getExercise(id);
-        return ResponseEntity.ok().body(exercise);
+    public ResponseEntity<ExerciseDTO> getExerciseById(@PathVariable Integer id) {
+        ExerciseDTO exerciseDTO = exerciseService.getExerciseDTOById(id);
+        return ResponseEntity.ok().body(exerciseDTO);
     }
+
     @PostMapping("/")
-    public ResponseEntity<Exercise> createExercise(@RequestBody Exercise exercise) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(exerciseService.createExercise(exercise));
+    public ResponseEntity<ExerciseDTO> createArticle(@RequestBody Exercise exercise) {
+        ExerciseDTO exerciseDTO = exerciseService.createExerciseDTO(exercise);
+        return ResponseEntity.status(HttpStatus.CREATED).body(exerciseDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Exercise> updateExercise(@PathVariable Integer id, @RequestBody Exercise exercise) {
-        return ResponseEntity.status(HttpStatus.OK).body(exerciseService.updateExercise(id, exercise));
+    public ResponseEntity<ExerciseDTO> updateArticle(@PathVariable Integer id, @RequestBody Exercise exercise) {
+        ExerciseDTO exerciseDTO = exerciseService.updateExerciseDTO(id, exercise);
+        return ResponseEntity.status(HttpStatus.OK).body(exerciseDTO);
     }
     @DeleteMapping("/{id}")
     public ResponseEntity<Exercise> deleteArticle(@PathVariable Integer id) {

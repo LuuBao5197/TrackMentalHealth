@@ -8,9 +8,9 @@ import java.util.List;
 public interface LessonService {
     // Business logic cua Lesson
     List<LessonDTO> getLessonDTOs();
-    Lesson getLesson(Integer id);
-    Lesson createLesson(Lesson lesson);
-    Lesson updateLesson(Integer id, Lesson lesson);
+    LessonDTO getLessonDTOById(Integer id);
+    LessonDTO createLessonDTO(Lesson lesson);
+    LessonDTO updateLessonDTO(Integer id, Lesson lesson);
     void deleteLesson(Integer id);
     //Business logic cua LessonStep
     List<LessonStep> getLessonStepsByLessonId(Integer id);
