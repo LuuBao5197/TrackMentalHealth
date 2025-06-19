@@ -24,19 +24,23 @@ public class LessonController {
         return ResponseEntity.ok(lessons);
     }
     @GetMapping("/{id}")
-    public ResponseEntity<Lesson> getLessonById(@PathVariable Integer id) {
-        Lesson lesson = lessonService.getLesson(id);
-        return ResponseEntity.ok().body(lesson);
+    public ResponseEntity<LessonDTO> getLessonById(@PathVariable Integer id) {
+        LessonDTO lessonDTO = lessonService.getLessonDTOById(id);
+        return ResponseEntity.ok().body(lessonDTO);
     }
+
     @PostMapping("/")
-    public ResponseEntity<Lesson> createLesson(@RequestBody Lesson lesson) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(lessonService.createLesson(lesson));
+    public ResponseEntity<LessonDTO> createLesson(@RequestBody Lesson lesson) {
+        LessonDTO lessonDTO = lessonService.createLessonDTO(lesson);
+        return ResponseEntity.status(HttpStatus.CREATED).body(lessonDTO);
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Lesson> updateLesson(@PathVariable Integer id, @RequestBody Lesson lesson) {
-        return ResponseEntity.status(HttpStatus.OK).body(lessonService.updateLesson(id, lesson));
+    public ResponseEntity<LessonDTO> updateLesson(@PathVariable Integer id, @RequestBody Lesson lesson) {
+        LessonDTO lessonDTO = lessonService.updateLessonDTO(id, lesson);
+        return ResponseEntity.status(HttpStatus.OK).body(lessonDTO);
     }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Lesson> deleteLesson(@PathVariable Integer id) {
         lessonService.deleteLesson(id);
