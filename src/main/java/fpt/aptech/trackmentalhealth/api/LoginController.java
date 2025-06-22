@@ -56,7 +56,6 @@ public class LoginController {
     public ResponseEntity<?> register(@ModelAttribute RegisterUserRequestDTO request) {
         try {
             Integer roleId = request.getRoleId();
-
             // Kiểm tra role ID hợp lệ
             if (roleId == null || roleId < 1 || roleId > 5) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid role ID."));
