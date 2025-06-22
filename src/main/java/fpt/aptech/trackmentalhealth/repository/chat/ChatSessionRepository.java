@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.repository.ChatRepository;
+package fpt.aptech.trackmentalhealth.repository.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatSession;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,8 +10,8 @@ public interface ChatSessionRepository extends JpaRepository<ChatSession,Integer
     @Query("select c from ChatSession c")
     List<ChatSession> getChatSessions();
 
-    @Query("select cs from ChatSession cs where cs.psychologistCode.bCode=:PsyId")
-    List<ChatSession> getChatSessionByPsyId(int PsyId);
+    @Query("select cs from ChatSession cs where cs.sender.id=:id")
+    List<ChatSession> getChatSessionByUserId(int id);
 
     @Query("select cs from ChatSession cs where cs.id=:id")
     ChatSession getChatSessionById(int id);
