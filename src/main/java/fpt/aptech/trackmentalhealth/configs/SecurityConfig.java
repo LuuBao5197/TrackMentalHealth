@@ -87,8 +87,9 @@ public class SecurityConfig {
                                 "/api/users/reset-password",
                                 "/api/users/pending-registrations",
                                 "/api/users/approve/**",
-                                "api/appointment/**",
-                                "api/chat/**"
+                                "/api/appointment/**",
+                                "/api/chat/**",
+                                "/moods"
                         ).permitAll()
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
