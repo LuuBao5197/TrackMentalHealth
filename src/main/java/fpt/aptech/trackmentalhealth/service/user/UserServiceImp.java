@@ -9,6 +9,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -35,13 +36,20 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public String loginUsers(UserDTO userDTO) {
-        Users users = loginRepository.findByEmail(userDTO.getEmail());
-        if (users != null && passwordEncoder.matches(userDTO.getPassword(), users.getPassword())) {
-            return jwtUtils.generateToken(users.getEmail(), users); // trả về JWT token
+    public Map<String, String> loginUsers(UserDTO userDTO) {
+        Users user = loginRepository.findByEmail(userDTO.getEmail());
+
+        if (user != null && passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
+            String token = jwtUtils.generateToken(user.getEmail(), user);
+            return Map.of(
+                    "token", token,
+                    "roleName", user.getRoleId().getRoleName()
+            );
         }
-        return null; // login thất bại
+
+        return null;
     }
+
 
     @Override
     public List<Users> findAllUsers() {

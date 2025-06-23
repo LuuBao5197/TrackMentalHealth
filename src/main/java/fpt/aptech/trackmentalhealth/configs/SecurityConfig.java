@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.configs;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.filter.JwtAuthenticationFilter;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -86,6 +87,7 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/users/login",
                                 "/api/users/register",
+                                "/api/users/check-email",
                                 "/api/users/forgot-password",
                                 "/api/users/verify-otp",
                                 "/api/users/reset-password",
@@ -97,7 +99,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role
-                        .requestMatchers("/api/users/by-role/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/by-role/**").hasAuthority("ROLE_ADMIN")
                         .requestMatchers("/api/users/profile").hasRole("ADMIN")
 
                         .requestMatchers("/index").hasRole("ADMIN")
@@ -109,9 +111,19 @@ public class SecurityConfig {
                         .requestMatchers("/api/users/edit-profile").authenticated()
 
                         .anyRequest().authenticated()
-                );
-        // Thêm JWT filter trước filter xác thực mặc định
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            System.out.println("🔐 UNAUTHORIZED (Token/Vô danh): " + authException.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            System.out.println("⛔ ACCESS DENIED (Sai quyền): " + accessDeniedException.getMessage());
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                        })
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
