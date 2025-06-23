@@ -30,7 +30,6 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Autowired
     private LoginRepository loginRepository;
 
@@ -43,10 +42,6 @@ public class SecurityConfig {
                 System.out.println("Không tìm thấy user với email: " + email);
                 throw new UsernameNotFoundException("User not found");
             }
-
-//            if (Boolean.FALSE.equals(users.getIsApproved())) {
-//                throw new UsernameNotFoundException("Account not approved by admin");
-//            }
 
             return User.builder()
                     .username(users.getEmail())
@@ -75,9 +70,9 @@ public class SecurityConfig {
             throws Exception {
         return config.getAuthenticationManager();
     }
-
-    @Bean
+        
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
@@ -93,7 +88,8 @@ public class SecurityConfig {
                                 "/api/users/approve/**",
                                 "/api/appointment/**",
                                 "/api/chat/**",
-                                "/moods"
+                                "/moods",
+                                "/api/test/"
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role
@@ -107,7 +103,6 @@ public class SecurityConfig {
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
 
                         .requestMatchers("/api/users/edit-profile").authenticated()
-
                         .anyRequest().authenticated()
                 );
         // Thêm JWT filter trước filter xác thực mặc định
