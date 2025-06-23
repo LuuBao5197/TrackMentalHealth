@@ -97,7 +97,7 @@ public class SecurityConfig {
                         .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
                         .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().permitAll()
+                        .anyRequest().authenticated()
                 );
 
         // Thêm JWT filter trước filter xác thực mặc định
