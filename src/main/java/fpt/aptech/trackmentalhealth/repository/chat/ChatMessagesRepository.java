@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.repository.ChatRepository;
+package fpt.aptech.trackmentalhealth.repository.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatMessage;
 import org.springframework.data.jpa.repository.JpaRepository;

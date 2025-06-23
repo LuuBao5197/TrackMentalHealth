@@ -14,5 +14,5 @@ public interface ChatService {
 
     ChatMessage sendMessage(ChatMessage message);
 
-    List<ChatSession> getChatSessionsByPsyId(int PsyId);
+    List<ChatSession> getChatSessionByUserId(int id);
 }

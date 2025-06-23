@@ -90,7 +90,10 @@ public class SecurityConfig {
                                 "/api/users/verify-otp",
                                 "/api/users/reset-password",
                                 "/api/users/pending-registrations",
-                                "/api/users/approve/**"
+                                "/api/users/approve/**",
+                                "/api/appointment/**",
+                                "/api/chat/**",
+                                "/moods"
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role

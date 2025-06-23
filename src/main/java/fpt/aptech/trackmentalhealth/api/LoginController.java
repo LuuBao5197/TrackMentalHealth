@@ -57,7 +57,6 @@ public class LoginController {
     public ResponseEntity<?> register(@ModelAttribute RegisterUserRequestDTO request) {
         try {
             Integer roleId = request.getRoleId();
-
             // Kiểm tra role ID hợp lệ
             if (roleId == null || roleId < 1 || roleId > 5) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid role ID."));
@@ -164,7 +163,6 @@ public class LoginController {
         }
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
-
     @GetMapping("/by-role/{roleId}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getUsersByRole(@PathVariable Integer roleId) {
@@ -199,7 +197,6 @@ public class LoginController {
                 "role", user.getRoleId() != null ? user.getRoleId().getRoleName() : null
         ));
     }
-
 
     @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyRole('USER', 'ADMIN', 'PSYCHOLOGIST', 'TEST_DESIGNER', 'CONTENT_CREATOR')")
