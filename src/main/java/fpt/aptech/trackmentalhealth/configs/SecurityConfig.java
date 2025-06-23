@@ -70,7 +70,8 @@ public class SecurityConfig {
             throws Exception {
         return config.getAuthenticationManager();
     }
-        
+
+    @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
 
         http
