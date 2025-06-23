@@ -1,3 +1,4 @@
+
 package fpt.aptech.trackmentalhealth.configs;
 
 import org.springframework.context.annotation.Bean;

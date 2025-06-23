@@ -19,6 +19,9 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
@@ -74,9 +77,10 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
@@ -91,19 +95,39 @@ public class SecurityConfig {
                                 "/api/chat/**",
                                 "/moods"
                         ).permitAll()
+
+                        // Chỉ ADMIN mới được xem user theo role
+                        .requestMatchers("/api/users/by-role/**").hasRole("ADMIN")
+                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
+
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
                         .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
                         .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
+
                         .requestMatchers("/api/users/edit-profile").authenticated()
+
                         .anyRequest().authenticated()
                 );
-
         // Thêm JWT filter trước filter xác thực mặc định
         http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://localhost:5173"); // 👈 frontend origin
+        configuration.addAllowedMethod("*");                     // GET, POST, etc.
+        configuration.addAllowedHeader("*");                     // All headers
+        configuration.setAllowCredentials(true);                 // For cookies/token
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);  // apply globally
+        return source;
+    }
+
 
 }

@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtils {
@@ -20,6 +21,7 @@ public class JwtUtils {
         return Jwts.builder()
                 .setSubject(username)
                 .claim("roleId", users.getRoleId())
+                .claim("roles", List.of("ROLE_" + users.getRoleId().getRoleName().toUpperCase()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
                 .signWith(secretToKey(secret))

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
@@ -161,6 +162,40 @@ public class LoginController {
             return ResponseEntity.ok(Map.of("token", token));
         }
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+    }
+    @GetMapping("/by-role/{roleId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getUsersByRole(@PathVariable Integer roleId) {
+        List<Users> users = loginRepository.findByRoleId_Id(roleId);
+        return ResponseEntity.ok(users.stream().map(user -> Map.of(
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "fullname", user.getFullname(),
+                "avatar", user.getAvatar()
+        )));
+    }
+
+    @GetMapping("/profile/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getProfile(@PathVariable Integer id) {
+        Optional<Users> optionalUser = loginRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        Users user = optionalUser.get();
+
+        return ResponseEntity.ok(Map.of(
+                "id", user.getId(),
+                "email", user.getEmail(),
+                "fullname", user.getFullname(),
+                "username", user.getUsername(),
+                "avatar", user.getAvatar(),
+                "address", user.getAddress(),
+                "dob", user.getDob(),
+                "gender", user.getGender(),
+                "role", user.getRoleId() != null ? user.getRoleId().getRoleName() : null
+        ));
     }
 
     @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})
