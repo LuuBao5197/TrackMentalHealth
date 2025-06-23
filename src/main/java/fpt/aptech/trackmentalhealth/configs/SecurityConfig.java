@@ -41,10 +41,6 @@ public class SecurityConfig {
                 throw new UsernameNotFoundException("User not found");
             }
 
-//            if (Boolean.FALSE.equals(users.getIsApproved())) {
-//                throw new UsernameNotFoundException("Account not approved by admin");
-//            }
-
             return User.builder()
                     .username(users.getEmail())
                     .password(users.getPassword())
@@ -75,6 +71,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -89,7 +86,8 @@ public class SecurityConfig {
                                 "/api/users/approve/**",
                                 "/api/appointment/**",
                                 "/api/chat/**",
-                                "/moods"
+                                "/moods",
+                                "/api/test/"
                         ).permitAll()
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
@@ -97,7 +95,6 @@ public class SecurityConfig {
                         .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
                         .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().authenticated()
                 );
 
         // Thêm JWT filter trước filter xác thực mặc định
