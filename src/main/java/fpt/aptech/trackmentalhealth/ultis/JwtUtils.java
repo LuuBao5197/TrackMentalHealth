@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.ultis;
 
 import fpt.aptech.trackmentalhealth.entities.Users;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -62,4 +63,10 @@ public class JwtUtils {
         return (username.equals(extractUsername(token)) && !isTokenExpired(token));
     }
 
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(secretToKey(secret))
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }

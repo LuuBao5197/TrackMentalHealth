@@ -19,7 +19,7 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 @Setter
 @Entity
 @Table(name = "Users", uniqueConstraints = {
-        @UniqueConstraint(name = "UQ__Users__F3DBC5727BBCF3A7", columnNames = {"username"})
+//        @UniqueConstraint(name = "UQ__Users__F3DBC5727BBCF3A7", columnNames = {"username"})
 })
 public class Users {
     @Id
