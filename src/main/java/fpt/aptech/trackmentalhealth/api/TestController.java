@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.api;
 
+import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/test")
@@ -152,5 +154,18 @@ public class TestController {
         }
     }
 
+    // api tao dong bo 1 bai test tu bai test cau hoi cac dap an den ket qua hien thi
+
+    @PostMapping("/full")
+    public ResponseEntity<?> createFullTest(@RequestBody FullTestDTO dto) {
+        try {
+            // Gọi service để xử lý
+            testService.createFullTest(dto);
+            return ResponseEntity.ok(Map.of("message", "Tạo bài test thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
 
 }

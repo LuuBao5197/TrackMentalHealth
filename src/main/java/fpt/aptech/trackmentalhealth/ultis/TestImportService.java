@@ -18,9 +18,11 @@ import org.springframework.web.multipart.MultipartFile;
 import org.apache.poi.xssf.*;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 public class TestImportService {
@@ -68,6 +70,7 @@ public class TestImportService {
             // 2. Read Questions
             Sheet questionSheet = workbook.getSheet("Questions");
             Map<String, TestQuestion> questionMap = saveQuestions(questionSheet, testMap);
+            Map<String, Long> questionCountMap = buildQuestionCountMap(questionMap);
 
             // 3. Read Options
             Sheet optionSheet = workbook.getSheet("Options");
@@ -75,7 +78,7 @@ public class TestImportService {
 
             // 4. Read Results
             Sheet resultSheet = workbook.getSheet("Results");
-            saveResults(resultSheet, testMap);
+            saveResults(resultSheet, testMap, questionCountMap);
 
             workbook.close();
         }
@@ -133,7 +136,10 @@ public class TestImportService {
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             String title = row.getCell(0).getStringCellValue().trim();
-
+            Test checkTest = testService.checkDuplicateTest(title);
+            if (checkTest != null) {
+                throw new IllegalArgumentException("Sheet" + sheet.getSheetName() + "Titlte of Test is duplicate in system");
+            }
             Test test = new Test();
             test.setTitle(title);
             test.setDescription(row.getCell(1).getStringCellValue().trim());
@@ -149,6 +155,43 @@ public class TestImportService {
 
     private Map<String, TestQuestion> saveQuestions(Sheet sheet, Map<String, Test> testMap) {
         Map<String, TestQuestion> map = new HashMap<>();
+        Map<String, Integer> questionOrderMap = new HashMap<>();
+        Map<String, Integer> questionCountMap = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            String testTitle = row.getCell(3).getStringCellValue().trim();
+            String questionText = row.getCell(0).getStringCellValue().trim();
+            String questionType = row.getCell(1).getStringCellValue().trim();
+            int questionOrder = (int) row.getCell(2).getNumericCellValue();
+
+            String questionKey = testTitle + "|" + questionText;
+            String orderKey = testTitle + "|" + questionOrder;
+
+            if (map.containsKey(questionText)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Trùng câu hỏi '" + questionText + "'");
+            }
+            if (questionOrderMap.containsKey(orderKey)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Trùng thứ tự câu hỏi " + questionOrder + " trong test '" + testTitle + "'");
+            }
+
+            map.put(questionText, new TestQuestion());
+            questionOrderMap.put(orderKey, questionOrder);
+            questionCountMap.put(testTitle, questionCountMap.getOrDefault(testTitle, 0) + 1);
+        }
+
+        for (Map.Entry<String, Integer> entry : questionCountMap.entrySet()) {
+            if (entry.getValue() < 5) {
+                errors.add("❌ Test '" + entry.getKey() + "' phải có ít nhất 5 câu hỏi.");
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n", errors));
+        }
+
+        // Nếu không có lỗi, tiến hành lưu thật
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             String testTitle = row.getCell(3).getStringCellValue().trim();
@@ -163,10 +206,63 @@ public class TestImportService {
             testService.createTestQuestion(q);
             map.put(questionText, q);
         }
+
         return map;
     }
 
     private void saveOptions(Sheet sheet, Map<String, TestQuestion> questionMap) {
+        Map<String, Map<Integer, Boolean>> orderCheck = new HashMap<>();
+        Map<String, Map<Integer, Boolean>> scoreCheck = new HashMap<>();
+        Map<String, Integer> countOptionsPerQuestion = new HashMap<>();
+        List<String> errors = new ArrayList<>();
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            String questionText = row.getCell(0).getStringCellValue().trim();
+            int optionOrder = (int) row.getCell(3).getNumericCellValue();
+            int score = (int) row.getCell(2).getNumericCellValue();
+
+            if (!questionMap.containsKey(questionText)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Câu hỏi '" + questionText + "' không tồn tại.");
+                continue;
+            }
+
+            if (optionOrder < 1 || optionOrder > 4) {
+                errors.add("❌ Dòng " + (i + 1) + ": Thứ tự đáp án phải từ 1 đến 4.");
+            }
+
+            if (score < 1 || score > 4) {
+                errors.add("❌ Dòng " + (i + 1) + ": Điểm phải từ 1 đến 4.");
+            }
+
+            orderCheck.putIfAbsent(questionText, new HashMap<>());
+            if (orderCheck.get(questionText).containsKey(optionOrder)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Trùng thứ tự đáp án " + optionOrder + " trong câu hỏi '" + questionText + "'");
+            } else {
+                orderCheck.get(questionText).put(optionOrder, true);
+            }
+
+            scoreCheck.putIfAbsent(questionText, new HashMap<>());
+            if (scoreCheck.get(questionText).containsKey(score)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Trùng điểm số " + score + " trong câu hỏi '" + questionText + "'");
+            } else {
+                scoreCheck.get(questionText).put(score, true);
+            }
+
+            countOptionsPerQuestion.put(questionText, countOptionsPerQuestion.getOrDefault(questionText, 0) + 1);
+        }
+
+        for (Map.Entry<String, Integer> entry : countOptionsPerQuestion.entrySet()) {
+            if (entry.getValue() != 4) {
+                errors.add("❌ Câu hỏi '" + entry.getKey() + "' phải có đúng 4 đáp án.");
+            }
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n", errors));
+        }
+
+        // Nếu không có lỗi, lưu thật
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             String questionText = row.getCell(0).getStringCellValue().trim();
@@ -181,7 +277,55 @@ public class TestImportService {
         }
     }
 
-    private void saveResults(Sheet sheet, Map<String, Test> testMap) {
+
+    private void saveResults(Sheet sheet, Map<String, Test> testMap, Map<String, Long> questionCountMap) {
+        List<String> errors = new ArrayList<>();
+        Map<String, List<int[]>> testRanges = new HashMap<>();
+
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            String testTitle = row.getCell(0).getStringCellValue().trim();
+
+            if (!testMap.containsKey(testTitle)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Test '" + testTitle + "' không tồn tại.");
+                continue;
+            }
+
+            int min = (int) row.getCell(1).getNumericCellValue();
+            int max = (int) row.getCell(2).getNumericCellValue();
+            int maxPossible = (int) (questionCountMap.getOrDefault(testTitle, 0L) * 4);
+
+            if (min <= 0) {
+                errors.add("❌ Dòng " + (i + 1) + ": minScore phải > 0.");
+            }
+
+            if (max > maxPossible) {
+                errors.add("❌ Dòng " + (i + 1) + ": maxScore phải < " + maxPossible + " (4 điểm * số câu hỏi).");
+            }
+
+            if (min > max) {
+                errors.add("❌ Dòng " + (i + 1) + ": minScore không được lớn hơn maxScore.");
+            }
+
+            // Kiểm tra trùng khoảng
+            testRanges.putIfAbsent(testTitle, new ArrayList<>());
+            for (int[] existingRange : testRanges.get(testTitle)) {
+                int existingMin = existingRange[0];
+                int existingMax = existingRange[1];
+                if (!(max < existingMin || min > existingMax)) {
+                    errors.add("❌ Dòng " + (i + 1) + ": khoảng điểm (" + min + "-" + max + ") bị trùng với khoảng (" + existingMin + "-" + existingMax + ") trong test '" + testTitle + "'");
+                    break;
+                }
+            }
+
+            testRanges.get(testTitle).add(new int[]{min, max});
+        }
+
+        if (!errors.isEmpty()) {
+            throw new IllegalArgumentException(String.join("\n", errors));
+        }
+
+        // Nếu không có lỗi thì lưu kết quả
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
             String testTitle = row.getCell(0).getStringCellValue().trim();
@@ -196,6 +340,10 @@ public class TestImportService {
         }
     }
 
+    private Map<String, Long> buildQuestionCountMap(Map<String, TestQuestion> questionMap) {
+        return questionMap.values().stream()
+                .collect(Collectors.groupingBy(q -> q.getTest().getTitle(), Collectors.counting()));
+    }
 
 }
 
