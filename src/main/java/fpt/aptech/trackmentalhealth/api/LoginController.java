@@ -268,7 +268,7 @@ public class LoginController {
         Users users = loginRepository.findByEmail(email);
         if (users == null) {
             return ResponseEntity.status(404).body(Map.of("error", "Invalid email"));
-        };
+        }
 
         String otp = generateOTP();
         users.setOtp(otp);

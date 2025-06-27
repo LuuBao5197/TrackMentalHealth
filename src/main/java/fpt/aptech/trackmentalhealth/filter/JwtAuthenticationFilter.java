@@ -29,6 +29,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+        System.out.println("🔍 Path: " + request.getServletPath());
+        System.out.println("🔍 Header Authorization: " + request.getHeader("Authorization"));
+
+
         final String header = request.getHeader("Authorization");
         String userEmail = null;
         String jwtToken = null;
@@ -66,16 +70,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getServletPath();
+        System.out.println("🔥 shouldNotFilter PATH: " + path);
         return path.equals("/api/users/login")
                 || path.equals("/api/users/register")
+                || path.equals("/api/users/send-otp-register")
+                || path.equals("/api/users/check-email")
                 || path.equals("/api/users/forgot-password")
                 || path.equals("/api/users/verify-otp")
+                || path.equals("/api/users/verify-otp-register")
                 || path.equals("/api/users/reset-password")
-                || path.startsWith("/api/users/approve/**") // 👈 bỏ qua xác thực cho approve
-                || path.startsWith("/api/users/pending-registrations") // 👈 bỏ qua xác thực cho pending list
+                || path.startsWith("/api/users/approve")
+                || path.startsWith("/api/users/pending-registrations")
                 || path.startsWith("/api/chat")
                 || path.startsWith("/api/appointment")
                 || path.startsWith("/moods");
     }
-
 }
