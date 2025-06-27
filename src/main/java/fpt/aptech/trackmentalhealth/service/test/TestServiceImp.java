@@ -1,4 +1,7 @@
 package fpt.aptech.trackmentalhealth.service.test;
+import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
+import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
+import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
@@ -8,6 +11,7 @@ import fpt.aptech.trackmentalhealth.repository.test.TestQuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
 import fpt.aptech.trackmentalhealth.repository.test.TestResultRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -140,4 +144,49 @@ public class TestServiceImp implements TestService {
     public void deleteTestResult(Integer id) {
         testResultRepository.deleteById(id);
     }
+
+    @Transactional
+    public void createFullTest(FullTestDTO dto) {
+        Test test = new Test();
+        test.setTitle(dto.getTitle());
+        test.setDescription(dto.getDescription());
+        test.setInstructions(dto.getInstructions());
+        test = testRepository.save(test);
+
+        for (QuestionDTO qDto : dto.getQuestions()) {
+            TestQuestion question = new TestQuestion();
+            question.setTest(test);
+            question.setQuestionText(qDto.getQuestionText());
+            question.setQuestionType(qDto.getQuestionType());
+            question.setQuestionOrder(qDto.getQuestionOrder());
+            question = testQuestionRepository.save(question);
+
+            for (OptionDTO oDto : qDto.getOptions()) {
+                TestOption option = new TestOption();
+                option.setQuestion(question);
+                option.setOptionText(oDto.getOptionText());
+                option.setScoreValue(oDto.getScoreValue());
+                option.setOptionOrder(oDto.getOptionOrder());
+                testOptionRepository.save(option);
+            }
+        }
+
+//        if (dto.getResults() != null) {
+//            for (TestResultDto rDto : dto.getResults()) {
+//                TestResult result = new TestResult();
+//                result.setTest(test);
+//                result.setUserId(rDto.getUserId());
+//                result.setTotalScore(rDto.getTotalScore());
+//                result.setResultText(rDto.getResultText());
+//                testResultRepo.save(result);
+//            }
+//        }
+    }
+
+    @Override
+    public Test checkDuplicateTest(String title) {
+        return testRepository.findByTitleIgnoreCase(title);
+    }
+
+
 }

@@ -79,34 +79,34 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/users/login",
-                                "/api/users/register",
-                                "/api/users/check-email",
-                                "/api/users/forgot-password",
-                                "/api/users/verify-otp",
-                                "/api/users/reset-password",
-                                "/api/users/pending-registrations",
-                                "/api/users/approve/**",
-                                "/api/appointment/**",
-                                "/api/chat/**",
-                                "/moods",
-                                "/api/test/"
-                        ).permitAll()
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
+//                        .requestMatchers(
+//                                "/api/users/login",
+//                                "/api/users/register",
+//                                "/api/users/check-email",
+//                                "/api/users/forgot-password",
+//                                "/api/users/verify-otp",
+//                                "/api/users/reset-password",
+//                                "/api/users/pending-registrations",
+//                                "/api/users/approve/**",
+//                                "/api/appointment/**",
+//                                "/api/chat/**",
+//                                "/moods",
+//                                "/api/test/"
+//                        ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role
-                        .requestMatchers("/api/users/by-role/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
-
-                        .requestMatchers("/index").hasRole("ADMIN")
-                        .requestMatchers("/user").hasRole("USER")
-                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
-                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
-                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
-
-                        .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().authenticated()
+//                        .requestMatchers("/api/users/by-role/**").hasAuthority("ROLE_ADMIN")
+//                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
+//
+//                        .requestMatchers("/index").hasRole("ADMIN")
+//                        .requestMatchers("/user").hasRole("USER")
+//                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
+//                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
+//                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
+//
+//                        .requestMatchers("/api/users/edit-profile").authenticated()
+//                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
