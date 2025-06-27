@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @Table(name = "pending_user_registration")
@@ -20,6 +21,8 @@ public class PendingUserRegistration {
     private String fullName;
     private Integer roleId;
     private String avatar;
+    private String otp;
+    private LocalDateTime otpExpiry;
 
     @Lob
     private byte[] certificate1;

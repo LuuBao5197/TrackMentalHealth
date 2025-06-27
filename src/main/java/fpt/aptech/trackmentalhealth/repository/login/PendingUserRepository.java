@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface PendingUserRepository extends JpaRepository<PendingUserRegistration, Integer> {
     List<PendingUserRegistration> findByIsReviewedFalse();
+
+    PendingUserRegistration findByEmail(String email);
 }

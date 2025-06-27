@@ -11,7 +11,9 @@ import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
 import fpt.aptech.trackmentalhealth.service.user.EmailService;
 import fpt.aptech.trackmentalhealth.service.user.UserService;
 import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
+import org.apache.http.HttpStatus;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -264,10 +266,10 @@ public class LoginController {
 
     // === FORGOT PASSWORD ===
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestParam String email) {
+    public ResponseEntity<?> forgotPassword(@RequestParam("email") String email) {
         Users users = loginRepository.findByEmail(email);
         if (users == null) {
-            return ResponseEntity.status(404).body(Map.of("error", "Invalid email"));
+            return ResponseEntity.status(HttpStatus.SC_NOT_FOUND).body(Map.of("error", "Invalid email"));
         }
 
         String otp = generateOTP();
@@ -275,6 +277,27 @@ public class LoginController {
         users.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
         loginRepository.save(users);
         emailService.sendOtpEmail(users.getEmail(), otp);
+        return ResponseEntity.ok(Map.of("message", "OTP has been sent to your email"));
+    }
+
+    // === SEND OTP REGISTER ===
+    // ✅ KHẮC PHỤC: kiểm tra kỹ và chỉ gửi nếu đã tồn tại hoặc thêm trường bắt buộc
+    @PostMapping("/send-otp-register")
+    public ResponseEntity<?> sendOtpRegister(@RequestParam("email") String email) {
+        PendingUserRegistration pending = pendingUserRepository.findByEmail(email);
+        if (pending == null) {
+            pending = new PendingUserRegistration();
+            pending.setEmail(email);
+            pending.setSubmittedAt(LocalDateTime.now());
+        }
+
+        String otp = generateOTP();
+        pending.setOtp(otp);
+        pending.setOtpExpiry(LocalDateTime.now().plusMinutes(5));
+        pendingUserRepository.save(pending);
+
+        emailService.sendOtpEmail(email, otp);
+
         return ResponseEntity.ok(Map.of("message", "OTP has been sent to your email"));
     }
 
@@ -294,6 +317,25 @@ public class LoginController {
 
         return ResponseEntity.ok(Map.of("message", "OTP verified successfully"));
     }
+
+    @PostMapping("/verify-otp-register")
+    public ResponseEntity<?> verifyOtpRegister(@RequestParam String email, @RequestParam String otp) {
+        PendingUserRegistration pending = pendingUserRepository.findByEmail(email);
+        if (pending == null) {
+            return ResponseEntity.status(400).body(Map.of("error", "Email not found or OTP not requested"));
+        }
+
+        if (pending.getOtp() == null || !pending.getOtp().trim().equals(otp.trim())) {
+            return ResponseEntity.status(400).body(Map.of("error", "Invalid OTP"));
+        }
+
+        if (pending.getOtpExpiry() == null || pending.getOtpExpiry().isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(400).body(Map.of("error", "OTP has expired"));
+        }
+
+        return ResponseEntity.ok(Map.of("message", "OTP verified successfully", "verified", true));
+    }
+
 
     // === RESET PASSWORD ===
     @PostMapping("/reset-password")
