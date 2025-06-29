@@ -15,7 +15,7 @@ public class ArticleDTO {
     private Integer id;
     private String title;
     private String content;
-    private Users author;
+    private Integer author;
     private LocalDateTime createdAt;
     private String status;
 
@@ -26,7 +26,7 @@ public class ArticleDTO {
         this.id = article.getId();
         this.title = article.getTitle();
         this.content = article.getContent();
-        this.author = article.getAuthor();
+        this.author = article.getId();
         this.createdAt = article.getCreatedAt();
         this.status = article.getStatus();
     }
