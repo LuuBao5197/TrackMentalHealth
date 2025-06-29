@@ -1,21 +1,127 @@
 package fpt.aptech.trackmentalhealth.service.lesson;
 
-import fpt.aptech.trackmentalhealth.dto.LessonDTO;
-import fpt.aptech.trackmentalhealth.entities.*;
+import fpt.aptech.trackmentalhealth.dto.LessonDto;
+import fpt.aptech.trackmentalhealth.dto.LessonStepDto;
+import fpt.aptech.trackmentalhealth.entities.ContentCreator;
+import fpt.aptech.trackmentalhealth.entities.Lesson;
+import fpt.aptech.trackmentalhealth.entities.LessonStep;
+import fpt.aptech.trackmentalhealth.repository.contentcreator.ContentCreatorRepository;
+import fpt.aptech.trackmentalhealth.repository.lesson.LessonRepository;
+import fpt.aptech.trackmentalhealth.repository.lesson.LessonStepRepository;
+import jakarta.transaction.Transactional;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
-public interface LessonService {
-    // Business logic cua Lesson
-    List<LessonDTO> getLessonDTOs();
-    LessonDTO getLessonDTOById(Integer id);
-    LessonDTO createLessonDTO(Lesson lesson);
-    LessonDTO updateLessonDTO(Integer id, Lesson lesson);
-    void deleteLesson(Integer id);
-    //Business logic cua LessonStep
-    List<LessonStep> getLessonStepsByLessonId(Integer id);
-    LessonStep getLessonStep(Integer id);
-    LessonStep createLessonStep(LessonStep lessonStep);
-    LessonStep updateLessonStep(Integer id, LessonStep lessonStep);
-    void deleteLessonStep(Integer id);
+@Service
+public class LessonService {
+
+    @Autowired
+    private LessonRepository lessonRepository;
+
+    @Autowired
+    private LessonStepRepository lessonStepRepository;
+
+    @Autowired
+    private ContentCreatorRepository contentCreatorRepository;
+
+    public List<LessonDto> getAllLessons() {
+        List<Lesson> lessons = lessonRepository.findAll();
+
+        return lessons.stream().map(lesson -> {
+            LessonDto dto = new LessonDto();
+            dto.setId(lesson.getId());
+            dto.setTitle(lesson.getTitle());
+            dto.setDescription(lesson.getDescription());
+            dto.setStatus(lesson.getStatus());
+            dto.setCreatedAt(lesson.getCreatedAt());
+            dto.setUpdatedAt(lesson.getUpdatedAt());
+            dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
+
+            List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
+                LessonStepDto stepDto = new LessonStepDto();
+                stepDto.setId(step.getId());
+                stepDto.setStepNumber(step.getStepNumber());
+                stepDto.setTitle(step.getTitle());
+                stepDto.setContent(step.getContent());
+                stepDto.setMediaType(step.getMediaType());
+                stepDto.setMediaUrl(step.getMediaUrl());
+                return stepDto;
+            }).collect(Collectors.toList());
+
+            dto.setLessonSteps(steps);
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
+    @Transactional
+    public Lesson createOrUpdateLesson(LessonDto dto) {
+        Lesson lesson = (dto.getId() != null)
+                ? lessonRepository.findById(dto.getId()).orElse(new Lesson())
+                : new Lesson();
+
+        lesson.setTitle(dto.getTitle());
+        lesson.setDescription(dto.getDescription());
+        lesson.setStatus(dto.getStatus());
+        lesson.setCreatedAt(dto.getCreatedAt());
+        lesson.setUpdatedAt(dto.getUpdatedAt());
+
+        if (dto.getCreatedBy() != null) {
+            ContentCreator creator = contentCreatorRepository.findById(dto.getCreatedBy())
+                    .orElseThrow(() -> new RuntimeException("ContentCreator not found with ID: " + dto.getCreatedBy()));
+            lesson.setCreatedBy(creator);
+        }
+
+        lesson = lessonRepository.save(lesson);
+
+        // If updating, remove old steps
+        if (dto.getId() != null) {
+            lessonStepRepository.deleteByLessonId(lesson.getId());
+        }
+
+        if (dto.getLessonSteps() != null) {
+            for (LessonStepDto stepDto : dto.getLessonSteps()) {
+                LessonStep step = new LessonStep();
+                step.setLesson(lesson);
+                step.setStepNumber(stepDto.getStepNumber());
+                step.setTitle(stepDto.getTitle());
+                step.setContent(stepDto.getContent());
+                step.setMediaType(stepDto.getMediaType());
+                step.setMediaUrl(stepDto.getMediaUrl());
+                lessonStepRepository.save(step);
+            }
+        }
+
+        return lesson;
+    }
+
+    public LessonDto getLessonById(Integer id) {
+        Lesson lesson = lessonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + id));
+
+        LessonDto dto = new LessonDto();
+        dto.setId(lesson.getId());
+        dto.setTitle(lesson.getTitle());
+        dto.setDescription(lesson.getDescription());
+        dto.setStatus(lesson.getStatus());
+        dto.setCreatedAt(lesson.getCreatedAt());
+        dto.setUpdatedAt(lesson.getUpdatedAt());
+        dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
+
+        List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
+            LessonStepDto stepDto = new LessonStepDto();
+            stepDto.setId(step.getId());
+            stepDto.setStepNumber(step.getStepNumber());
+            stepDto.setTitle(step.getTitle());
+            stepDto.setContent(step.getContent());
+            stepDto.setMediaType(step.getMediaType());
+            stepDto.setMediaUrl(step.getMediaUrl());
+            return stepDto;
+        }).collect(Collectors.toList());
+
+        dto.setLessonSteps(steps);
+        return dto;
+    }
 }

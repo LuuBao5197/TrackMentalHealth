@@ -108,7 +108,7 @@ public class SecurityConfig {
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
 
                         .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
