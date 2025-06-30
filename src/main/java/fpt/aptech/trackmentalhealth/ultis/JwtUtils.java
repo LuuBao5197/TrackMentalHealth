@@ -21,7 +21,9 @@ public class JwtUtils {
     public String generateToken(String username, Users users) {
         return Jwts.builder()
                 .setSubject(username)
-                .claim("roleId", users.getRoleId())
+                .claim("userId", users.getId())
+//                .claim("user", users)
+                .claim("role", users.getRoleId().getRoleName())
                 .claim("roles", List.of("ROLE_" + users.getRoleId().getRoleName().toUpperCase()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
