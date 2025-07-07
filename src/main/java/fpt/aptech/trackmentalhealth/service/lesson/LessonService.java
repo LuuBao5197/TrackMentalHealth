@@ -36,6 +36,7 @@ public class LessonService {
             dto.setTitle(lesson.getTitle());
             dto.setDescription(lesson.getDescription());
             dto.setStatus(lesson.getStatus());
+            dto.setPhoto(lesson.getPhoto());
             dto.setCreatedAt(lesson.getCreatedAt());
             dto.setUpdatedAt(lesson.getUpdatedAt());
             dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
@@ -65,6 +66,7 @@ public class LessonService {
         lesson.setTitle(dto.getTitle());
         lesson.setDescription(dto.getDescription());
         lesson.setStatus(dto.getStatus());
+        lesson.setPhoto(dto.getPhoto());
         lesson.setCreatedAt(dto.getCreatedAt());
         lesson.setUpdatedAt(dto.getUpdatedAt());
 

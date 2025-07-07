@@ -13,6 +13,7 @@ public class LessonDto {
     private String title;
     private String description;
     private String status;
+    private String photo;
     private Instant createdAt;
     private Instant updatedAt;
     private Integer createdBy; // ID của user tạo bài học
