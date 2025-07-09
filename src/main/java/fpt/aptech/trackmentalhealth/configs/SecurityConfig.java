@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.configs;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.filter.JwtAuthenticationFilter;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,6 +20,9 @@ import org.springframework.security.crypto.password.NoOpPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableMethodSecurity(prePostEnabled = true)
@@ -27,7 +31,6 @@ public class SecurityConfig {
 
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
-
     @Autowired
     private LoginRepository loginRepository;
 
@@ -40,10 +43,6 @@ public class SecurityConfig {
                 System.out.println("Không tìm thấy user với email: " + email);
                 throw new UsernameNotFoundException("User not found");
             }
-
-//            if (Boolean.FALSE.equals(users.getIsApproved())) {
-//                throw new UsernameNotFoundException("Account not approved by admin");
-//            }
 
             return User.builder()
                     .username(users.getEmail())
@@ -74,37 +73,71 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, CorsConfigurationSource corsConfigurationSource) throws Exception {
+
         http
                 .csrf(csrf -> csrf.disable())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
-//                        .requestMatchers(
-//                                "/api/users/login",
-//                                "/api/users/register",
-//                                "/api/users/forgot-password",
-//                                "/api/users/verify-otp",
-//                                "/api/users/reset-password",
-//                                "/api/users/pending-registrations",
-//                                "/api/users/approve/**",
-//                                "/api/appointment/**",
-//                                "/api/chat/**",
-//                                "/ws/**",
-//                                "api/psychologist/**"
-//                        ).permitAll()
-//                        .requestMatchers("/index").hasRole("ADMIN")
-//                        .requestMatchers("/user").hasRole("USER")
-//                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
-//                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
-//                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
-//                        .requestMatchers("/api/users/edit-profile").authenticated()
-//                        .anyRequest().authenticated()
-                );
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/api/users/login",
+                                "/api/users/register",
+                                "/api/users/send-otp-register",
+                                "/api/users/check-email",
+                                "/api/users/forgot-password",
+                                "/api/users/verify-otp",
+                                "/api/users/verify-otp-register",
+                                "/api/users/reset-password",
+                                "/api/users/pending-registrations",
+                                "/api/users/approve/**",
+                                "/api/appointment/**",
+                                "/api/chat/**",
+                                "/moods",
+                                "/api/test/"
+                        ).permitAll()
 
-        // Thêm JWT filter trước filter xác thực mặc định
-        http.addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                        // Chỉ ADMIN mới được xem user theo role
+                        .requestMatchers("/api/users/by-role/**").hasAuthority("ROLE_ADMIN")
+                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
+
+                        .requestMatchers("/index").hasRole("ADMIN")
+                        .requestMatchers("/user").hasRole("USER")
+                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
+                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
+                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
+
+                        .requestMatchers("/api/users/edit-profile").authenticated()
+                        .anyRequest().permitAll()
+                )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            System.out.println("🔐 UNAUTHORIZED (Token/Vô danh): " + authException.getMessage());
+                            response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) -> {
+                            System.out.println("⛔ ACCESS DENIED (Sai quyền): " + accessDeniedException.getMessage());
+                            response.sendError(HttpServletResponse.SC_FORBIDDEN, "Forbidden");
+                        })
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
-}
 
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.addAllowedOrigin("http://localhost:5173"); // 👈 frontend origin
+        configuration.addAllowedMethod("*");                     // GET, POST, etc.
+        configuration.addAllowedHeader("*");                     // All headers
+        configuration.setAllowCredentials(true);                 // For cookies/token
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);  // apply globally
+        return source;
+    }
+
+
+}

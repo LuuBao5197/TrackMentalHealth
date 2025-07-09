@@ -32,6 +32,9 @@ public class Lesson {
     @Column(name = "description")
     private String description;
 
+    @Column(name = "photo")
+    private String photo;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private ContentCreator createdBy;

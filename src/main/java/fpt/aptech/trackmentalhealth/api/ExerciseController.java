@@ -2,9 +2,7 @@ package fpt.aptech.trackmentalhealth.api;
 
 
 import fpt.aptech.trackmentalhealth.dto.ExerciseDTO;
-import fpt.aptech.trackmentalhealth.dto.LessonDTO;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
-import fpt.aptech.trackmentalhealth.entities.Lesson;
 import fpt.aptech.trackmentalhealth.service.exercise.ExerciseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;

@@ -22,9 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/users")
@@ -56,22 +54,9 @@ public class LoginController {
     public ResponseEntity<?> register(@ModelAttribute RegisterUserRequestDTO request) {
         try {
             Integer roleId = request.getRoleId();
-
             // Kiểm tra role ID hợp lệ
             if (roleId == null || roleId < 1 || roleId > 5) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Invalid role ID."));
-            }
-
-            // Các role cần upload chứng chỉ: 2, 4, 5
-            boolean requiresCertificate = roleId == 2 || roleId == 4 || roleId == 5;
-
-            if (requiresCertificate) {
-                MultipartFile[] files = request.getCertificates();
-                if (files == null || files.length < 1 || files.length > 5) {
-                    return ResponseEntity.badRequest().body(
-                            Map.of("error", "You must upload between 1 and 5 certificates for this role.")
-                    );
-                }
             }
 
             // Kiểm tra email trùng
@@ -79,31 +64,60 @@ public class LoginController {
                 return ResponseEntity.badRequest().body(Map.of("error", "Email is already registered."));
             }
 
-            // Tạo bản ghi chờ duyệt
-            PendingUserRegistration pending = new PendingUserRegistration();
-            pending.setEmail(request.getEmail());
-            pending.setPassword(passwordEncoder.encode(request.getPassword()));
-            pending.setFullName(request.getFullName());
-            pending.setRoleId(roleId);
-            pending.setSubmittedAt(LocalDateTime.now());
+            // Role cần xét duyệt
+            boolean requiresApproval = roleId == 3 || roleId == 4 || roleId == 5;
 
-            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
-                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
-                pending.setAvatar(avatarUrl);
-            }
-
-            // Lưu chứng chỉ nếu có
-            if (requiresCertificate) {
+            // Nếu cần duyệt thì lưu vào PendingUserRegistration
+            if (requiresApproval) {
                 MultipartFile[] files = request.getCertificates();
+                if (files == null || files.length < 1 || files.length > 5) {
+                    return ResponseEntity.badRequest().body(
+                            Map.of("error", "You must upload between 1 and 5 certificates for this role.")
+                    );
+                }
+
+                PendingUserRegistration pending = new PendingUserRegistration();
+                pending.setEmail(request.getEmail());
+                pending.setPassword(passwordEncoder.encode(request.getPassword()));
+                pending.setFullName(request.getFullName());
+                pending.setRoleId(roleId);
+                pending.setSubmittedAt(LocalDateTime.now());
+
+                if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                    String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                    pending.setAvatar(avatarUrl);
+                }
+
+                // Lưu chứng chỉ nếu có
                 if (files.length >= 1) pending.setCertificate1(files[0].getBytes());
                 if (files.length >= 2) pending.setCertificate2(files[1].getBytes());
                 if (files.length >= 3) pending.setCertificate3(files[2].getBytes());
                 if (files.length >= 4) pending.setCertificate4(files[3].getBytes());
                 if (files.length == 5) pending.setCertificate5(files[4].getBytes());
+
+                pendingUserRepository.save(pending);
+                return ResponseEntity.ok(Map.of("message", "Registration submitted. Awaiting admin approval."));
             }
 
-            pendingUserRepository.save(pending);
-            return ResponseEntity.ok(Map.of("message", "Registration submitted. Awaiting admin approval."));
+            // Nếu không cần duyệt (ví dụ: USER) thì lưu trực tiếp vào Users
+            Users user = new Users();
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setUsername(request.getFullName());
+            user.setFullname(request.getFullName());
+            user.setIsApproved(true);
+
+            Role role = new Role();
+            role.setId(roleId);
+            user.setRoleId(role);
+
+            if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                user.setAvatar(avatarUrl);
+            }
+
+            loginRepository.save(user);
+            return ResponseEntity.ok(Map.of("message", "Registered successfully"));
 
         } catch (Exception e) {
             return ResponseEntity.status(500).body(Map.of(
@@ -112,7 +126,6 @@ public class LoginController {
             ));
         }
     }
-
 
     // == Approve User ===
     @PostMapping("/approve/{pendingId}")
@@ -147,6 +160,12 @@ public class LoginController {
         return ResponseEntity.ok(Map.of("message", "User approved and account created"));
     }
 
+    @GetMapping("/check-email")
+    public ResponseEntity<?> checkEmail(@RequestParam String email) {
+        boolean exists = loginRepository.findByEmail(email) != null;
+        return ResponseEntity.ok(Map.of("exists", exists));
+    }
+
     // === Get Pending Register ===
     @GetMapping("/pending-registrations")
     public ResponseEntity<?> listPendingUsers() {
@@ -157,11 +176,52 @@ public class LoginController {
     // === LOGIN ===
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody UserDTO userDTO) {
-        String token = userService.loginUsers(userDTO);
-        if (token != null) {
-            return ResponseEntity.ok(Map.of("token", token));
+        Map<String, String> result = userService.loginUsers(userDTO);
+        if (result != null) {
+            return ResponseEntity.ok(result);
         }
         return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
+    }
+
+    @GetMapping("/by-role/{roleId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getUsersByRole(@PathVariable Integer roleId) {
+        List<Users> users = loginRepository.findByRoleId_Id(roleId);
+
+        List<Map<String, Object>> result = users.stream().map(user -> {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", user.getId());
+            map.put("email", user.getEmail());
+            map.put("fullname", user.getFullname());
+            map.put("avatar", user.getAvatar());
+            map.put("certificates", user.getCertificates());
+            return map;
+        }).toList();
+
+        return ResponseEntity.ok(result);
+    }
+
+    @GetMapping("/profile/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getProfile(@PathVariable Integer id) {
+        Optional<Users> optionalUser = loginRepository.findById(id);
+        if (optionalUser.isEmpty()) {
+            return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+        }
+
+        Users user = optionalUser.get();
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", user.getId());
+        response.put("email", user.getEmail());
+        response.put("fullname", user.getFullname());
+        response.put("username", user.getUsername());
+        response.put("avatar", user.getAvatar());
+        response.put("address", user.getAddress());
+        response.put("dob", user.getDob());
+        response.put("gender", user.getGender());
+        response.put("role", user.getRoleId() != null ? user.getRoleId().getRoleName() : null);
+
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping(value = "/edit-profile", consumes = {"multipart/form-data"})

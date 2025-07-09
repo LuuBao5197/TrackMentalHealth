@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.ultis;
 
 import fpt.aptech.trackmentalhealth.entities.Users;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
@@ -11,6 +12,7 @@ import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 @Component
 public class JwtUtils {
@@ -19,7 +21,10 @@ public class JwtUtils {
     public String generateToken(String username, Users users) {
         return Jwts.builder()
                 .setSubject(username)
-                .claim("roleId", users.getRoleId())
+                .claim("userId", users.getId())
+//                .claim("user", users)
+                .claim("role", users.getRoleId().getRoleName())
+                .claim("roles", List.of("ROLE_" + users.getRoleId().getRoleName().toUpperCase()))
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
                 .signWith(secretToKey(secret))
@@ -60,4 +65,10 @@ public class JwtUtils {
         return (username.equals(extractUsername(token)) && !isTokenExpired(token));
     }
 
+    public Claims extractAllClaims(String token) {
+        return Jwts.parser()
+                .setSigningKey(secretToKey(secret))
+                .parseClaimsJws(token)
+                .getBody();
+    }
 }

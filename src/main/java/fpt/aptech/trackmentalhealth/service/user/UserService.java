@@ -4,6 +4,7 @@ import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.Users;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface UserService {
@@ -11,9 +12,10 @@ public interface UserService {
 
     Users register(Users users);
 
-    String loginUsers(UserDTO userDTO);
+    Map<String, String> loginUsers(UserDTO userDTO);
 
     List<Users> findAllUsers();
 
     Users findById(String id);
+
 }

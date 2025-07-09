@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.service.test;
 
+import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
@@ -32,4 +33,6 @@ public interface TestService {
     TestResult createTestResult(TestResult testResult);
     TestResult updateTestResult(Integer id, TestResult testResult);
     void deleteTestResult(Integer id);
+    void createFullTest(FullTestDTO dto);
+    Test checkDuplicateTest(String title);
 }
