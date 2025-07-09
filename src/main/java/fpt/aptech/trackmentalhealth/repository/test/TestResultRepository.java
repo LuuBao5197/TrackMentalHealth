@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface TestResultRepository extends JpaRepository<TestResult, Integer> {
     @Query(
-            "SELECT t from TestResult t where t.test.id =: id"
+            "SELECT t from TestResult t where t.test.id = :id"
     )
     List<TestResult> getTestResultsByTestId(@Param("id")Integer id);
 }
