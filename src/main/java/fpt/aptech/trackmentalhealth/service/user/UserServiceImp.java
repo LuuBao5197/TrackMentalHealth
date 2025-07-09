@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.service.user;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.ultis.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +24,9 @@ public class UserServiceImp implements UserService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Override
     public Optional<Users> findByEmail(String email) {
@@ -54,5 +58,10 @@ public class UserServiceImp implements UserService {
     @Override
     public List<Users> findAllUsers() {
         return loginRepository.findAll();
+    }
+
+    @Override
+    public Users findById(String id) {
+        return userRepository.findById(id);
     }
 }

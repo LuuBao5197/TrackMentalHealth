@@ -14,4 +14,7 @@ public interface AppointmentService {
     void updateAppointment(Appointment appointment);
 
     void deleteAppointment(int id);
+
+    boolean hasPendingAppointment(int userId, int psyId);
+
 }

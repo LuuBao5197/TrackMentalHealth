@@ -21,7 +21,7 @@ public class ChatSession {
     private Integer id;
 
     // Người gửi
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "user_id")
     private Users sender;
 
