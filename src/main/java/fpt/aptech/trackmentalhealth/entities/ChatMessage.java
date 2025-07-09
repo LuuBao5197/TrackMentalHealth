@@ -12,6 +12,7 @@ import lombok.Setter;
 @Table(name = "ChatMessages")
 public class ChatMessage {
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Integer id;
 

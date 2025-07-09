@@ -15,4 +15,6 @@ public interface ChatService {
     ChatMessage sendMessage(ChatMessage message);
 
     List<ChatSession> getChatSessionByUserId(int id);
+
+    ChatSession getChatSessionByFromAndTo(int user1, int user2);
 }

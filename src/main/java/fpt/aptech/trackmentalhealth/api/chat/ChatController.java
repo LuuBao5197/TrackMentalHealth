@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.api;
+package fpt.aptech.trackmentalhealth.api.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatMessage;
 import fpt.aptech.trackmentalhealth.entities.ChatSession;
@@ -17,12 +17,18 @@ public class ChatController {
     private ChatService chatService;
 
     @GetMapping("/{sessionId}")
-    public List<ChatMessage> getMessages(@PathVariable int sessionId) {
+    public List<ChatMessage> getMessagesBySessionId(@PathVariable int sessionId) {
         return chatService.getChatMessagesByChatSessionId(sessionId);
     }
 
     @GetMapping("/session/{userId}")
-    public List<ChatSession> getUserChatSessions(@PathVariable int userId) {
+    public List<ChatSession> getChatSessionsByUserId(@PathVariable int userId) {
         return chatService.getChatSessionByUserId(userId);
+    }
+
+    @GetMapping("/session/{user1}/{user2}")
+    public ChatSession getChatSessionByFromAndTo(@PathVariable int user1,
+                                                 @PathVariable int user2) {
+        return chatService.getChatSessionByFromAndTo(user1, user2);
     }
 }
