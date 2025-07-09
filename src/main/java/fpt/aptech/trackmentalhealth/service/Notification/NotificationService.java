@@ -10,7 +10,13 @@ import java.util.List;
 
 public interface NotificationService {
     List<Notification> getNotificationsByUserId(int userId);
+
     Notification getNotificationById(int id);
+
     Notification createNotification(Notification notification);
+
     void deleteNotification(int id);
+
+    void changeStatus(int id);
+
 }

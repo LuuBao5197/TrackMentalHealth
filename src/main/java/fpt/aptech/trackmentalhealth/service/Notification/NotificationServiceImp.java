@@ -31,4 +31,16 @@ public class NotificationServiceImp implements NotificationService{
     public void deleteNotification(int id) {
         notificationRepository.deleteById(id);
     }
+
+    @Override
+    public void changeStatus(int id) {
+        Notification notification = notificationRepository.getNotificationById(id);
+        if (notification != null) {
+            notification.setRead(!notification.isRead());
+            notificationRepository.save(notification);
+
+        } else {
+            throw new RuntimeException("Notification not found");
+        }
+    }
 }
