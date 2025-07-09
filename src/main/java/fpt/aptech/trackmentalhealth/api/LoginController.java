@@ -202,7 +202,7 @@ public class LoginController {
     }
 
     @GetMapping("/profile/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'USER')")
     public ResponseEntity<?> getProfile(@PathVariable Integer id) {
         Optional<Users> optionalUser = loginRepository.findById(id);
         if (optionalUser.isEmpty()) {

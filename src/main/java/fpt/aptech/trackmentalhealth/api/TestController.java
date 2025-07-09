@@ -1,6 +1,6 @@
 package fpt.aptech.trackmentalhealth.api;
 
-import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
+import fpt.aptech.trackmentalhealth.dto.test.*;
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -32,9 +33,57 @@ public class TestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Test> getTestById(@PathVariable Integer id) {
+//    public ResponseEntity<Test> getTestById(@PathVariable Integer id) {
+//        Test test = testService.getTest(id);
+//        return ResponseEntity.ok().body(test);
+//    }
+    public ResponseEntity<TestDetailDTO> getTestById(@PathVariable Integer id) {
         Test test = testService.getTest(id);
-        return ResponseEntity.ok().body(test);
+        if (test == null) {
+            return ResponseEntity.notFound().build();
+        }
+        List<TestQuestion> questionList = testService.getTestQuestionsByTestId(test.getId());
+        List<TestResult> questionResultList = testService.getTestResultsByTestId(test.getId());
+
+        List<QuestionDTO> questionDTOList = new ArrayList<>();
+        for (TestQuestion testQuestion : questionList) {
+            QuestionDTO questionDTO = new QuestionDTO();
+            questionDTO.setId(testQuestion.getId());
+            questionDTO.setQuestionText(testQuestion.getQuestionText());
+            questionDTO.setQuestionType(testQuestion.getQuestionType());
+            questionDTO.setQuestionOrder(testQuestion.getQuestionOrder());
+            List<TestOption> testOptionList =  testService.getTestOptionsByTestQuestionId(testQuestion.getId());
+            List<OptionDTO> optionDTOList = new ArrayList<>();
+            for (TestOption testOption : testOptionList) {
+                OptionDTO optionDTO = new OptionDTO();
+                optionDTO.setId(testOption.getId());
+                optionDTO.setOptionText(testOption.getOptionText());
+                optionDTO.setScoreValue(testOption.getScoreValue());
+                optionDTO.setOptionOrder(testOption.getOptionOrder());
+                optionDTOList.add(optionDTO);
+            }
+            questionDTO.setOptions(optionDTOList);
+            questionDTOList.add(questionDTO);
+        }
+
+        List<TestResultDTO> resultDTOS  = new ArrayList<>();
+        for (TestResult testResult : questionResultList) {
+            TestResultDTO testResultDTO = new TestResultDTO();
+            testResultDTO.setId(testResult.getId());
+            testResultDTO.setResultText(testResult.getResultText());
+            testResultDTO.setMinScore(testResult.getMinScore());
+            testResultDTO.setMaxScore(testResult.getMaxScore());
+            resultDTOS.add(testResultDTO);
+        }
+        TestDetailDTO testDetailDTO = new TestDetailDTO();
+        testDetailDTO.setId(test.getId());
+        testDetailDTO.setDescription(test.getDescription());
+        testDetailDTO.setTitle(test.getTitle());
+        testDetailDTO.setInstructions(test.getInstructions());
+        testDetailDTO.setQuestions(questionDTOList);
+        testDetailDTO.setResults(resultDTOS);
+        return ResponseEntity.ok().body(testDetailDTO);
+
     }
 
     @PostMapping("/")

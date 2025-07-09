@@ -4,7 +4,7 @@ import lombok.Data;
 
 @Data
 public class OptionDTO {
-    private Long id;
+    private Integer id;
     private String optionText;
     private Integer scoreValue;
     private Integer optionOrder;
