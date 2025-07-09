@@ -78,25 +78,27 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/api/users/login",
-                                "/api/users/register",
-                                "/api/users/forgot-password",
-                                "/api/users/verify-otp",
-                                "/api/users/reset-password",
-                                "/api/users/pending-registrations",
-                                "/api/users/approve/**",
-                                "api/appointment/**",
-                                "api/chat/**"
-                        ).permitAll()
-                        .requestMatchers("/index").hasRole("ADMIN")
-                        .requestMatchers("/user").hasRole("USER")
-                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
-                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
-                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
-                        .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().authenticated()
+                .authorizeHttpRequests(auth -> auth.anyRequest().permitAll()
+//                        .requestMatchers(
+//                                "/api/users/login",
+//                                "/api/users/register",
+//                                "/api/users/forgot-password",
+//                                "/api/users/verify-otp",
+//                                "/api/users/reset-password",
+//                                "/api/users/pending-registrations",
+//                                "/api/users/approve/**",
+//                                "/api/appointment/**",
+//                                "/api/chat/**",
+//                                "/ws/**",
+//                                "api/psychologist/**"
+//                        ).permitAll()
+//                        .requestMatchers("/index").hasRole("ADMIN")
+//                        .requestMatchers("/user").hasRole("USER")
+//                        .requestMatchers("/psychologist").hasRole("PSYCHOLOGIST")
+//                        .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
+//                        .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
+//                        .requestMatchers("/api/users/edit-profile").authenticated()
+//                        .anyRequest().authenticated()
                 );
 
         // Thêm JWT filter trước filter xác thực mặc định
@@ -104,5 +106,5 @@ public class SecurityConfig {
 
         return http.build();
     }
-
 }
+

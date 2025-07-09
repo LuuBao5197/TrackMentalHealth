@@ -24,7 +24,14 @@ public class AppointmentServiceImp implements AppointmentService{
 
     @Override
     public Appointment createAppointment(Appointment appointment) {
-         return appointmentRepository.save(appointment);
+        int userId = appointment.getUser().getId();
+        int psyId = appointment.getPsychologist().getId();
+
+        if (hasPendingAppointment(userId, psyId)) {
+            throw new RuntimeException("You already have a pending appointment with this psychologist.");
+        }
+
+        return appointmentRepository.save(appointment);
     }
 
     @Override
@@ -36,4 +43,11 @@ public class AppointmentServiceImp implements AppointmentService{
     public void deleteAppointment(int id) {
         appointmentRepository.deleteById(id);
     }
+
+    @Override
+    public boolean hasPendingAppointment(int userId, int psyId) {
+        List<Appointment> existing = appointmentRepository.findPendingAppointmentByUserAndPsychologist(userId, psyId);
+        return !existing.isEmpty();
+    }
+
 }

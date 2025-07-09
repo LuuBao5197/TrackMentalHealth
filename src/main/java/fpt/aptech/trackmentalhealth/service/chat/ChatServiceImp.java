@@ -37,11 +37,18 @@ public class ChatServiceImp implements ChatService {
 
     @Override
     public ChatMessage sendMessage(ChatMessage message) {
-        return  chatMessagesRepository.save(message);
+        ChatMessage saved = chatMessagesRepository.save(message);
+        saved.getSession().getSender().getFullname();
+        return saved;
     }
 
     @Override
     public List<ChatSession> getChatSessionByUserId(int id) {
         return chatSessionRepository.getChatSessionByUserId(id);
+    }
+
+    @Override
+    public ChatSession getChatSessionByFromAndTo(int user1, int user2) {
+        return chatSessionRepository.getChatSessionByTwoUserid(user1, user2);
     }
 }

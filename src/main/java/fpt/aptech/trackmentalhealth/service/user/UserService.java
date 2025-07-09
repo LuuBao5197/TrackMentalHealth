@@ -14,4 +14,6 @@ public interface UserService {
     String loginUsers(UserDTO userDTO);
 
     List<Users> findAllUsers();
+
+    Users findById(String id);
 }
