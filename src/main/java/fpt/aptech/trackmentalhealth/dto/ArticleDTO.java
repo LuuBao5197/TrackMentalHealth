@@ -26,8 +26,12 @@ public class ArticleDTO {
         this.id = article.getId();
         this.title = article.getTitle();
         this.content = article.getContent();
-        this.author = article.getId();
+
+        // Tránh lỗi NullPointerException khi author là null
+        this.author = (article.getAuthor() != null) ? article.getAuthor().getId() : null;
+
         this.createdAt = article.getCreatedAt();
         this.status = article.getStatus();
     }
+
 }

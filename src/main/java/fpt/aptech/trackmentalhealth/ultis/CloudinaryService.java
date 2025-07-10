@@ -43,7 +43,9 @@ public class CloudinaryService {
 //        );
 //
 //        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), uploadParams);
-        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.emptyMap());
+        Map<?, ?> result = cloudinary.uploader().upload(file.getBytes(), ObjectUtils.asMap(
+                "resource_type", "auto"
+        ));
         return result.get("secure_url").toString();
     }
 }
