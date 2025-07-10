@@ -60,4 +60,8 @@ public class UserServiceImp implements UserService {
         return loginRepository.findAll();
     }
 
+    @Override
+    public Users findById(String id) {
+        return userRepository.findById(id);
+    }
 }
