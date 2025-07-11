@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -10,6 +11,7 @@ import org.hibernate.annotations.Nationalized;
 @Setter
 @Entity
 @Table(name = "Mood_Level")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class MoodLevel {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
