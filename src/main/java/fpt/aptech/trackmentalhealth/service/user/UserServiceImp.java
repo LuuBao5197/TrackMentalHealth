@@ -1,7 +1,9 @@
 package fpt.aptech.trackmentalhealth.service.user;
 
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
+import fpt.aptech.trackmentalhealth.entities.ContentCreator;
 import fpt.aptech.trackmentalhealth.entities.Users;
+import fpt.aptech.trackmentalhealth.repository.contentcreator.ContentCreatorRepository;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.ultis.JwtUtils;
@@ -15,6 +17,8 @@ import java.util.Optional;
 
 @Service
 public class UserServiceImp implements UserService {
+    @Autowired
+    private ContentCreatorRepository contentCreatorRepository;
 
     @Autowired
     private LoginRepository loginRepository;
@@ -44,15 +48,19 @@ public class UserServiceImp implements UserService {
         Users user = loginRepository.findByEmail(userDTO.getEmail());
 
         if (user != null && passwordEncoder.matches(userDTO.getPassword(), user.getPassword())) {
-            String token = jwtUtils.generateToken(user.getEmail(), user);
+            Optional<ContentCreator> contentCreatorOpt = contentCreatorRepository.findByUser(user);
+            Integer contentCreatorId = contentCreatorOpt.map(ContentCreator::getId).orElse(null);
+
+            String token = jwtUtils.generateToken(user.getEmail(), user, contentCreatorId);
+
             return Map.of(
                     "token", token,
                     "roleName", user.getRoleId().getRoleName()
             );
         }
-
         return null;
     }
+
 
 
     @Override

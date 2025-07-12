@@ -18,18 +18,23 @@ import java.util.List;
 public class JwtUtils {
     private final String secret = "AIzaSyBFnrG-ATKD6vqtBPyZYXIKfBdEP0I8V2A";
 
-    public String generateToken(String username, Users users) {
-        return Jwts.builder()
+    public String generateToken(String username, Users users, Integer contentCreatorId) {
+        var builder = Jwts.builder()
                 .setSubject(username)
                 .claim("userId", users.getId())
-//                .claim("user", users)
                 .claim("role", users.getRoleId().getRoleName())
                 .claim("roles", List.of("ROLE_" + users.getRoleId().getRoleName().toUpperCase()))
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10)) // 10 giờ
-                .signWith(secretToKey(secret))
-                .compact();
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .signWith(secretToKey(secret));
+
+        if(contentCreatorId != null) {
+            builder.claim("contentCreatorId", contentCreatorId);
+        }
+
+        return builder.compact();
     }
+
 
     private SecretKey secretToKey(String secret) {
         var bytes = secret.getBytes(StandardCharsets.UTF_8);
