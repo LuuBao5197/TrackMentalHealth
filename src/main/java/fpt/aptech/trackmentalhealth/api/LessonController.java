@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.LessonDto;
+import fpt.aptech.trackmentalhealth.dto.LessonStepDto;
 import fpt.aptech.trackmentalhealth.entities.Lesson;
 import fpt.aptech.trackmentalhealth.service.lesson.LessonService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/lessons")
+@RequestMapping("/api/lesson")
 public class LessonController {
 
     @Autowired
@@ -41,4 +42,27 @@ public class LessonController {
             return ResponseEntity.badRequest().body(ex.getMessage());
         }
     }
+
+    @GetMapping("/{id}/steps")
+    public ResponseEntity<List<LessonStepDto>> getLessonStepsByLessonId(@PathVariable Integer id) {
+        try {
+            List<LessonStepDto> steps = lessonService.getLessonStepsByLessonId(id);
+            return ResponseEntity.ok(steps);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(null);
+        }
+    }
+    @GetMapping("/{lessonId}/steps/{stepId}")
+    public ResponseEntity<LessonStepDto> getLessonStepById(
+            @PathVariable Integer lessonId,
+            @PathVariable Integer stepId) {
+        try {
+            LessonStepDto step = lessonService.getLessonStepById(lessonId, stepId);
+            return ResponseEntity.ok(step);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(null);
+        }
+    }
+
+
 }
