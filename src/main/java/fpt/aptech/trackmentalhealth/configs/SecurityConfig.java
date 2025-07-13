@@ -96,7 +96,7 @@ public class SecurityConfig {
                                 "/moods",
                                 "/api/test/",
                                 "/api/diaries",
-                                "/api/diaries/**"
+                                "/api/diaries/**",
                                 "/api/chat/**",
                                 "api/notification/**"
 
@@ -104,7 +104,7 @@ public class SecurityConfig {
 
                         // Chỉ ADMIN mới được xem user theo role
                         .requestMatchers("/api/users/by-role/**").hasAuthority("ROLE_ADMIN")
-                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
+//                        .requestMatchers("/api/users/profile").hasRole("ADMIN")
 
                         .requestMatchers("/index").hasRole("ADMIN")
                         .requestMatchers("/user").hasRole("USER")
@@ -135,7 +135,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // 👈 frontend origin
+        configuration.addAllowedOrigin("http://localhost:5173"); // 👈 frontend origin
         configuration.addAllowedMethod("*");                     // GET, POST, etc.
         configuration.addAllowedHeader("*");                     // All headers
         configuration.setAllowCredentials(true);                 // For cookies/token
