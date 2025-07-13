@@ -95,8 +95,11 @@ public class SecurityConfig {
                                 "/api/chat/**",
                                 "/moods",
                                 "/api/test/",
+                                "/api/diaries",
+                                "/api/diaries/**"
                                 "/api/chat/**",
                                 "api/notification/**"
+
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role
