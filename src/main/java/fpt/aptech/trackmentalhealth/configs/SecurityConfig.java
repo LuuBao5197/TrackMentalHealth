@@ -97,6 +97,9 @@ public class SecurityConfig {
                                 "/api/test/",
                                 "/api/diaries",
                                 "/api/diaries/**"
+                                "/api/chat/**",
+                                "api/notification/**"
+
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role
@@ -109,8 +112,9 @@ public class SecurityConfig {
                         .requestMatchers("/content_creator").hasRole("CONTENT_CREATOR")
                         .requestMatchers("/test_designer").hasRole("TEST_DESIGNER")
 
-                        .requestMatchers("/api/users/edit-profile").authenticated()
-                        .anyRequest().permitAll()
+                        .requestMatchers("/api/users/edit-profile")
+                        .authenticated()
+                       .anyRequest().permitAll()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint((request, response, authException) -> {
@@ -131,7 +135,7 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:5173"); // 👈 frontend origin
+        configuration.addAllowedOrigin("http://localhost:3000"); // 👈 frontend origin
         configuration.addAllowedMethod("*");                     // GET, POST, etc.
         configuration.addAllowedHeader("*");                     // All headers
         configuration.setAllowCredentials(true);                 // For cookies/token

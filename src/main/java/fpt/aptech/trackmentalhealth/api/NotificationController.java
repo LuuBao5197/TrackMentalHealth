@@ -39,4 +39,9 @@ public class NotificationController {
         }
     }
 
+    @PutMapping("/changestatus/{id}")
+    public void changeStatus(@PathVariable int id){
+        notificationService.changeStatus(id);
+    }
+
 }

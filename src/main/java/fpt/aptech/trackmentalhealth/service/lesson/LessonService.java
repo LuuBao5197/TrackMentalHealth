@@ -126,4 +126,69 @@ public class LessonService {
         dto.setLessonSteps(steps);
         return dto;
     }
+
+    public List<LessonStepDto> getLessonStepsByLessonId(Integer lessonId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + lessonId));
+
+        return lesson.getLessonSteps().stream().map(step -> {
+            LessonStepDto stepDto = new LessonStepDto();
+            stepDto.setId(step.getId());
+            stepDto.setStepNumber(step.getStepNumber());
+            stepDto.setTitle(step.getTitle());
+            stepDto.setContent(step.getContent());
+            stepDto.setMediaType(step.getMediaType());
+            stepDto.setMediaUrl(step.getMediaUrl());
+            return stepDto;
+        }).collect(Collectors.toList());
+    }
+    public LessonStepDto getLessonStepById(Integer lessonId, Integer stepId) {
+        Lesson lesson = lessonRepository.findById(lessonId)
+                .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + lessonId));
+
+        LessonStep step = lesson.getLessonSteps().stream()
+                .filter(s -> s.getId().equals(stepId))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("LessonStep not found with ID: " + stepId + " in Lesson: " + lessonId));
+
+        LessonStepDto stepDto = new LessonStepDto();
+        stepDto.setId(step.getId());
+        stepDto.setStepNumber(step.getStepNumber());
+        stepDto.setTitle(step.getTitle());
+        stepDto.setContent(step.getContent());
+        stepDto.setMediaType(step.getMediaType());
+        stepDto.setMediaUrl(step.getMediaUrl());
+
+        return stepDto;
+    }
+    public List<LessonDto> getLessonsByCreatorId(Integer creatorId) {
+        List<Lesson> lessons = lessonRepository.findByCreatedBy_Id(creatorId);
+
+        return lessons.stream().map(lesson -> {
+            LessonDto dto = new LessonDto();
+            dto.setId(lesson.getId());
+            dto.setTitle(lesson.getTitle());
+            dto.setDescription(lesson.getDescription());
+            dto.setStatus(lesson.getStatus());
+            dto.setPhoto(lesson.getPhoto());
+            dto.setCreatedAt(lesson.getCreatedAt());
+            dto.setUpdatedAt(lesson.getUpdatedAt());
+            dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
+
+            List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
+                LessonStepDto stepDto = new LessonStepDto();
+                stepDto.setId(step.getId());
+                stepDto.setStepNumber(step.getStepNumber());
+                stepDto.setTitle(step.getTitle());
+                stepDto.setContent(step.getContent());
+                stepDto.setMediaType(step.getMediaType());
+                stepDto.setMediaUrl(step.getMediaUrl());
+                return stepDto;
+            }).collect(Collectors.toList());
+
+            dto.setLessonSteps(steps);
+            return dto;
+        }).collect(Collectors.toList());
+    }
+
 }
