@@ -31,4 +31,8 @@ public class Mood {
     @Column(name = "note")
     private String note;
 
+    @Lob
+    @Column(name = "ai_suggestion")
+    private String aiSuggestion;
+
 }
