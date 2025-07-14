@@ -139,11 +139,11 @@ public class SecurityConfig {
         configuration.addAllowedMethod("*");                     // GET, POST, etc.
         configuration.addAllowedHeader("*");                     // All headers
         configuration.setAllowCredentials(true);                 // For cookies/token
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);  // apply globally
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
 
 }

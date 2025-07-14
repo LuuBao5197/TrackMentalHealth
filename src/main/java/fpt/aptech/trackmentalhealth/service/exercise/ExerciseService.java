@@ -14,4 +14,6 @@ public interface ExerciseService {
     ExerciseDTO createExerciseDTO(Exercise exercise);
     ExerciseDTO updateExerciseDTO(Integer id, Exercise exercise);
     void deleteExercise(Integer id);
+    List<ExerciseDTO> getExercisesByCreatorId(Integer creatorId);
+
 }
