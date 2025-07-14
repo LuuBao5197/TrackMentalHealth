@@ -51,4 +51,11 @@ public class ArticleServiceImp implements ArticleService {
             articleRepository.delete(articleDel);
         }
     }
+
+    @Override
+    public List<ArticleDTO> getArticlesByCreatorId(Integer creatorId) {
+        List<Article> articles = articleRepository.findByAuthor_Id(creatorId);
+        return articles.stream().map(ArticleDTO::new).toList();
+    }
+
 }

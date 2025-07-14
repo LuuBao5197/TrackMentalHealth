@@ -48,4 +48,11 @@ public class ExerciseServiceImp implements ExerciseService {
             exerciseRepository.delete(exerciseDel);
         }
     }
+
+    @Override
+    public List<ExerciseDTO> getExercisesByCreatorId(Integer creatorId) {
+        List<Exercise> exercises = exerciseRepository.findByCreatedBy_Id(creatorId);
+        return exercises.stream().map(ExerciseDTO::new).toList();
+    }
+
 }
