@@ -135,15 +135,16 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.addAllowedOrigin("http://localhost:3000"); // 👈 frontend origin
-        configuration.addAllowedMethod("*");                     // GET, POST, etc.
-        configuration.addAllowedHeader("*");                     // All headers
-        configuration.setAllowCredentials(true);                 // For cookies/token
+        configuration.addAllowedOrigin("http://localhost:5173"); // ✅ CHO PHÉP 5173
+        configuration.addAllowedMethod("*");   // GET, POST, PUT, DELETE
+        configuration.addAllowedHeader("*");   // Content-Type, Authorization, etc.
+        configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);  // apply globally
+        source.registerCorsConfiguration("/**", configuration);
         return source;
     }
+
 
 
 }

@@ -105,4 +105,16 @@ public class ExerciseController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Exercise not found");
         }
     }
+
+    // GET exercises by creator
+    @GetMapping("/creator/{creatorId}")
+    public ResponseEntity<List<ExerciseDTO>> getExercisesByCreator(@PathVariable Integer creatorId) {
+        try {
+            List<ExerciseDTO> exercises = exerciseService.getExercisesByCreatorId(creatorId);
+            return ResponseEntity.ok(exercises);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }
