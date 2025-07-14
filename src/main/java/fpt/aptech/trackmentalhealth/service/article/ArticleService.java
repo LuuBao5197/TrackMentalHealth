@@ -14,4 +14,6 @@ public interface ArticleService {
     ArticleDTO createArticleDTO(Article article);
     ArticleDTO updateArticleDTO(Integer id, Article article);
     void deleteArticle(Integer id);
+    List<ArticleDTO> getArticlesByCreatorId(Integer creatorId);
+
 }

@@ -99,4 +99,16 @@ public class ArticleController {
         articleService.deleteArticle(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
+
+    // GET all articles by creator
+    @GetMapping("/creator/{creatorId}")
+    public ResponseEntity<List<ArticleDTO>> getArticlesByCreator(@PathVariable Integer creatorId) {
+        try {
+            List<ArticleDTO> articles = articleService.getArticlesByCreatorId(creatorId);
+            return ResponseEntity.ok(articles);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
 }
