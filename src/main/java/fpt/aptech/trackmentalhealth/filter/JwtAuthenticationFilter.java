@@ -58,7 +58,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || path.equals("/api/users/forgot-password")
                 || path.equals("/api/users/verify-otp")
                 || path.equals("/api/users/verify-otp-register")
-                || path.equals("/api/users/reset-password")
                 || path.startsWith("/api/users/approve")
                 || path.startsWith("/api/users/pending-registrations")
                 || path.startsWith("/api/chat")
@@ -66,6 +65,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 || path.startsWith("/moods")
                 || path.startsWith("/api/chat/**")
                 || path.startsWith("/api/notification/**")
+                || path.startsWith("/api/users/profile/**")
                 || path.equals("/api/users/reset-password");
 
     }

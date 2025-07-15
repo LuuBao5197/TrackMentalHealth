@@ -64,5 +64,14 @@ public class LessonController {
         }
     }
 
+    @GetMapping("/creator/{creatorId}")
+    public ResponseEntity<List<LessonDto>> getLessonsByCreator(@PathVariable Integer creatorId) {
+        try {
+            List<LessonDto> lessons = lessonService.getLessonsByCreatorId(creatorId);
+            return ResponseEntity.ok(lessons);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(500).body(null);
+        }
+    }
 
 }
