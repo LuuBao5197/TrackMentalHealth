@@ -4,7 +4,6 @@ import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
 import fpt.aptech.trackmentalhealth.entities.TestResult;
-import fpt.aptech.trackmentalhealth.service.community.CommunityService;
 import fpt.aptech.trackmentalhealth.service.test.TestService;
 import jakarta.transaction.Transactional;
 import org.apache.poi.ss.usermodel.Cell;
@@ -15,7 +14,6 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-import org.apache.poi.xssf.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -31,59 +29,85 @@ public class TestImportService {
     private TestService testService;
 
     @Transactional
-    public void importFromFile(MultipartFile file, Integer createdBy) throws Exception {
-        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
+    public List<String> importFromFile(MultipartFile file, Integer createdBy) throws Exception {
+        List<String> errors = new ArrayList<>();
 
+        try (XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream())) {
             List<String> requiredSheets = List.of("Test", "Questions", "Options", "Results");
+
             for (String sheetName : requiredSheets) {
                 if (workbook.getSheet(sheetName) == null) {
-                    throw new IllegalArgumentException("Thiếu sheet bắt buộc: " + sheetName);
+                    errors.add("❌ Sheet '" + sheetName + "' không tồn tại trong file Excel.");
                 }
             }
-            Sheet testSheetVal = workbook.getSheet("Test");
-            Row testHeader = testSheetVal.getRow(0);
-            if (!checkHeader(testHeader, List.of("Title", "Description", "Instructions"))) {
-                throw new IllegalArgumentException("Sheet 'Test' không đúng cấu trúc cột");
-            }
-            Sheet questionSheetVal = workbook.getSheet("Questions");
-            Row questionHeader = questionSheetVal.getRow(0);
-            if (!checkHeader(questionHeader, List.of("QuestionText", "QuestionType", "QuestionOrder", "TestTitle"))) {
-                throw new IllegalArgumentException("Sheet 'Question' không đúng cấu trúc cột");
+
+            if (!errors.isEmpty()) {
+                throw new TestImportValidationException("Thiếu sheet bắt buộc.", errors);
             }
 
-            Sheet optionSheetVal = workbook.getSheet("Options");
-            Row optionHeader = optionSheetVal.getRow(0);
-            if (!checkHeader(optionHeader, List.of("QuestionText", "OptionText", "ScoreValue", "OptionOrder"))) {
-                throw new IllegalArgumentException("Sheet 'Option' không đúng cấu trúc cột");
+            // Kiểm tra tiêu đề sheet
+            if (!checkHeader(workbook.getSheet("Test").getRow(0), List.of("Title", "Description", "Instructions"))) {
+                errors.add("❌ Sheet 'Test' không đúng cấu trúc cột.");
             }
 
-            Sheet resultSheetVal = workbook.getSheet("Results");
-            Row resultHeader = resultSheetVal.getRow(0);
-            if (!checkHeader(resultHeader, List.of("TestTitle", "MinScore", "MaxScore", "ResultText"))) {
-                throw new IllegalArgumentException("sheet 'Results' không đúng cấu trúc cột");
+            if (!checkHeader(workbook.getSheet("Questions").getRow(0), List.of("QuestionText", "QuestionType", "QuestionOrder", "TestTitle"))) {
+                errors.add("❌ Sheet 'Questions' không đúng cấu trúc cột.");
             }
 
-            // 1. Read Test
-            Sheet testSheet = workbook.getSheet("Test");
-            Map<String, Test> testMap = saveTests(testSheet, createdBy);
+            if (!checkHeader(workbook.getSheet("Options").getRow(0), List.of("QuestionText", "OptionText", "ScoreValue", "OptionOrder"))) {
+                errors.add("❌ Sheet 'Options' không đúng cấu trúc cột.");
+            }
 
-            // 2. Read Questions
-            Sheet questionSheet = workbook.getSheet("Questions");
-            Map<String, TestQuestion> questionMap = saveQuestions(questionSheet, testMap);
-            Map<String, Long> questionCountMap = buildQuestionCountMap(questionMap);
+            if (!checkHeader(workbook.getSheet("Results").getRow(0), List.of("TestTitle", "MinScore", "MaxScore", "ResultText"))) {
+                errors.add("❌ Sheet 'Results' không đúng cấu trúc cột.");
+            }
 
-            // 3. Read Options
-            Sheet optionSheet = workbook.getSheet("Options");
-            saveOptions(optionSheet, questionMap);
+            if (!errors.isEmpty()) {
+                throw new TestImportValidationException("Lỗi cấu trúc tiêu đề trong các sheet.", errors);
+            }
 
-            // 4. Read Results
-            Sheet resultSheet = workbook.getSheet("Results");
-            saveResults(resultSheet, testMap, questionCountMap);
+            // Đọc và lưu dữ liệu từng sheet
+            Map<String, Test> testMap;
+            Map<String, TestQuestion> questionMap;
+            Map<String, Long> questionCountMap;
+
+            try {
+                Sheet testSheet = workbook.getSheet("Test");
+                testMap = saveTests(testSheet, createdBy);
+            } catch (IllegalArgumentException e) {
+                errors.add(e.getMessage());
+                throw new TestImportValidationException("Lỗi khi xử lý Sheet Test", errors);
+            }
+
+            try {
+                Sheet questionSheet = workbook.getSheet("Questions");
+                questionMap = saveQuestions(questionSheet, testMap);
+                questionCountMap = buildQuestionCountMap(questionMap);
+            } catch (IllegalArgumentException e) {
+                errors.addAll(List.of(e.getMessage().split("\n")));
+                throw new TestImportValidationException("Lỗi khi xử lý Sheet Questions", errors);
+            }
+
+            try {
+                Sheet optionSheet = workbook.getSheet("Options");
+                saveOptions(optionSheet, questionMap);
+            } catch (IllegalArgumentException e) {
+                errors.addAll(List.of(e.getMessage().split("\n")));
+                throw new TestImportValidationException("Lỗi khi xử lý Sheet Options", errors);
+            }
+
+            try {
+                Sheet resultSheet = workbook.getSheet("Results");
+                saveResults(resultSheet, testMap, questionCountMap);
+            } catch (IllegalArgumentException e) {
+                errors.addAll(List.of(e.getMessage().split("\n")));
+                throw new TestImportValidationException("Lỗi khi xử lý Sheet Results", errors);
+            }
 
             workbook.close();
         }
 
-
+        return List.of("✅ Import thành công");
     }
 
     private boolean checkHeader(Row headerRow, List<String> expectedHeaders) {
