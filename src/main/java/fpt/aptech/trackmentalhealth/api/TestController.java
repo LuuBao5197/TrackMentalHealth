@@ -6,7 +6,9 @@ import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
 import fpt.aptech.trackmentalhealth.entities.TestResult;
 import fpt.aptech.trackmentalhealth.service.test.TestService;
+import fpt.aptech.trackmentalhealth.ultis.TestImportErrorResponse;
 import fpt.aptech.trackmentalhealth.ultis.TestImportService;
+import fpt.aptech.trackmentalhealth.ultis.TestImportValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -192,16 +194,18 @@ public class TestController {
 
     // api import file excel (xlsx) de tao bo cau hoi
     @PostMapping("/import-test")
-    public ResponseEntity<String> importTest(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> importTest(@RequestParam("file") MultipartFile file) {
         try {
-            testImportService.importFromFile(file, 1);
-            return ResponseEntity.ok("Import thành công");
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body("❌ File không hợp lệ: " + e.getMessage());
+            List<String> result = testImportService.importFromFile(file, 1);
+            return ResponseEntity.ok(result);
+        } catch (TestImportValidationException ex) {
+            return ResponseEntity.badRequest().body(ex.getErrors());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Import thất bại: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(List.of("❌ Lỗi hệ thống: " + e.getMessage()));
         }
     }
+
 
     // api tao dong bo 1 bai test tu bai test cau hoi cac dap an den ket qua hien thi
 
