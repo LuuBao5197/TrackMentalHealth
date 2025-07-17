@@ -1,11 +1,8 @@
 package fpt.aptech.trackmentalhealth.dto;
 
-import fpt.aptech.trackmentalhealth.entities.Users;
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Size;
+import fpt.aptech.trackmentalhealth.entities.Users; // Cần thiết nếu dùng trong constructor
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDateTime;
 
@@ -15,9 +12,9 @@ public class ArticleDTO {
     private Integer id;
     private String title;
     private String content;
-    private Integer author;
+    private Integer author; // ID của tác giả
     private LocalDateTime createdAt;
-    private String status;
+    private String status; // Giữ nguyên là String để khớp với frontend gửi lên "true"/"false"
 
     public ArticleDTO() {
     }
@@ -31,7 +28,6 @@ public class ArticleDTO {
         this.author = (article.getAuthor() != null) ? article.getAuthor().getId() : null;
 
         this.createdAt = article.getCreatedAt();
-        this.status = article.getStatus();
+        this.status = article.getStatus(); // Giả định status trong entity cũng là String
     }
-
 }
