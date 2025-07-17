@@ -36,8 +36,10 @@ public class ArticleServiceImp implements ArticleService {
         return new ArticleDTO(savedArticle);
     }
 
-    @Override
+    // Phương thức này nhận một đối tượng Article đã được cập nhật từ controller
+    // và lưu nó vào cơ sở dữ liệu.
     public ArticleDTO updateArticleDTO(Integer id, Article article) {
+        // Id đã được kiểm tra ở Controller, nên ở đây chỉ cần save
         Article updatedArticle = articleRepository.save(article);
         return new ArticleDTO(updatedArticle);
     }
