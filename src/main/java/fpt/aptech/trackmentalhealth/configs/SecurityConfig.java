@@ -98,8 +98,8 @@ public class SecurityConfig {
                                 "/api/diaries",
                                 "/api/diaries/**",
                                 "/api/chat/**",
-                                "api/notification/**"
-
+                                "api/notification/**",
+                                "/ws/**"
                         ).permitAll()
 
                         // Chỉ ADMIN mới được xem user theo role

@@ -1,0 +1,21 @@
+package fpt.aptech.trackmentalhealth.repository.chat;
+
+import fpt.aptech.trackmentalhealth.entities.ChatGroup;
+import fpt.aptech.trackmentalhealth.entities.ChatSession;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
+import java.util.List;
+
+public interface ChatGroupRepository extends JpaRepository<ChatGroup,Integer> {
+    @Query("select cs from ChatGroup cs where cs.id=:id")
+    ChatGroup getChatGroupById(int id);
+
+    @Query("SELECT cs FROM ChatGroup cs JOIN cs.members m WHERE m.id = :id")
+    List<ChatGroup> getChatGroupsByUserId(@Param("id") int id);
+
+    @Query("select cs from ChatGroup cs where cs.createdBy.id=:id")
+    List<ChatGroup> getChatGroupsByUserIdCreated(int id);
+
+}
