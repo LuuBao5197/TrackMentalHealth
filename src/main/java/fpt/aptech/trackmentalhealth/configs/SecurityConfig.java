@@ -98,6 +98,8 @@ public class SecurityConfig {
                                 "/api/diaries",
                                 "/api/diaries/**",
                                 "/api/chat/**",
+                                "api/notification/**",
+                                "/ws/**",
                                 "api/notification/**"
                         ).permitAll()
 

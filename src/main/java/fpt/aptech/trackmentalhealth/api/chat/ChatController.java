@@ -31,4 +31,10 @@ public class ChatController {
                                                  @PathVariable int user2) {
         return chatService.getChatSessionByFromAndTo(user1, user2);
     }
+
+    @PutMapping("/changeStatus/{sessionId}/{receiverId}")
+    public void changeStatus(@PathVariable int sessionId, @PathVariable int receiverId) {
+        chatService.changeStatusIsRead(sessionId, receiverId);
+    }
+
 }
