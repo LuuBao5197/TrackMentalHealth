@@ -67,28 +67,63 @@ public class ArticleController {
     @PutMapping("/{id}")
     public ResponseEntity<?> updateArticle(@PathVariable Integer id, @RequestBody ArticleDTO request) {
         try {
-            Article article = articleRepository.findById(id)
-                    .orElseThrow(() -> new IllegalArgumentException("Article not found"));
+            // 1. Tìm Article cần update
+            Article existingArticle = articleRepository.findById(id)
+                    .orElseThrow(() -> new IllegalArgumentException("Article not found with ID: " + id));
 
-            article.setTitle(request.getTitle());
-            article.setContent(request.getContent());
-            article.setCreatedAt(request.getCreatedAt());
-            article.setStatus(request.getStatus());
+            // 2. Cập nhật các trường có thể thay đổi từ request DTO
+            existingArticle.setTitle(request.getTitle());
+            existingArticle.setContent(request.getContent());
 
+            // 3. Xử lý trường 'status'
+            // Đảm bảo status từ DTO được chuyển đổi đúng sang kiểu Boolean
+            // Nếu bạn muốn status là boolean trong entity, hãy Parse từ string "true"/"false"
+            if (request.getStatus() != null) {
+                existingArticle.setStatus(request.getStatus()); // Nếu status trong Article là String
+            }
+            // HOẶC nếu status trong Article Entity là Boolean:
+            // existingArticle.setStatus(Boolean.parseBoolean(request.getStatus()));
+
+
+            // 4. KHÔNG NÊN CẬP NHẬT createdAt KHI UPDATE.
+            // createdAt là thời điểm bài viết được tạo ra, không thay đổi.
+            // existingArticle.setCreatedAt(request.getCreatedAt()); // <-- BỎ DÒNG NÀY
+
+            // 5. Xử lý Author:
+            // Thông thường, tác giả của một bài viết không thay đổi khi update.
+            // Tuy nhiên, nếu bạn thực sự muốn cho phép thay đổi tác giả,
+            // hãy đảm bảo logic tìm kiếm tác giả là đúng.
+            // Nếu request.getAuthor() là null, giữ nguyên tác giả hiện tại
             if (request.getAuthor() != null) {
                 Users author = userRepository.findById(request.getAuthor())
-                        .orElseThrow(() -> new RuntimeException("Author not found"));
-                article.setAuthor(author);
-            } else {
-                article.setAuthor(null);
+                        .orElseThrow(() -> new RuntimeException("Author not found with ID: " + request.getAuthor()));
+                existingArticle.setAuthor(author);
             }
+            // Nếu request.getAuthor() là null và bạn muốn SET NULL cho tác giả:
+            // else {
+            //     existingArticle.setAuthor(null);
+            // }
 
-            ArticleDTO updated = articleService.updateArticleDTO(id, article);
+
+            // 6. Cập nhật trường 'updatedAt' (nếu có trong Article Entity)
+            // Đây là best practice để theo dõi lần cuối cùng một bản ghi được chỉnh sửa.
+            // Hãy thêm trường 'updatedAt' (LocalDateTime updatedAt;) vào entity Article của bạn
+            // existingArticle.setUpdatedAt(LocalDateTime.now()); // Thêm dòng này nếu bạn có trường updatedAt
+
+            // 7. Gọi service để lưu các thay đổi
+            ArticleDTO updated = articleService.updateArticleDTO(id, existingArticle); // Truyền entity đã được cập nhật
             return ResponseEntity.ok(updated);
+
         } catch (IllegalArgumentException e) {
+            // Xử lý lỗi khi không tìm thấy Article
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        } catch (IllegalStateException e) {
+        } catch (RuntimeException e) {
+            // Xử lý lỗi khi không tìm thấy Author
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        } catch (Exception e) {
+            // Bắt tất cả các ngoại lệ khác để tránh lỗi 500 Internal Server Error và debug
+            e.printStackTrace(); // In stack trace ra console để xem lỗi chi tiết
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An unexpected error occurred: " + e.getMessage());
         }
     }
 

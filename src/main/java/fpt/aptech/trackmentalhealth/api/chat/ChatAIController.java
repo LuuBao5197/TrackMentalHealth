@@ -15,6 +15,7 @@ import java.util.*;
 
 @RestController
 @RequestMapping("/api/chatai")
+@CrossOrigin
 public class ChatAIController {
 
     @Autowired
