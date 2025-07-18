@@ -96,7 +96,7 @@ public class SecurityConfig {
                                 "/moods",
                                 "/api/test/",
                                 "/api/diaries",
-                                "/api/diaries/**"
+                                "/api/diaries/**",
                                 "/api/chat/**",
                                 "api/notification/**"
 
