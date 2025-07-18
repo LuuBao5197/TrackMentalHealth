@@ -5,12 +5,14 @@ import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
 import fpt.aptech.trackmentalhealth.entities.TestResult;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface TestService {
     // Business logic cua Test
-    List<Test> getTests();
+    Page<Test> getTests(Pageable pageable);
     Test getTest(Integer id);
     Test createTest(Test test);
     Test updateTest(Integer id, Test test);
@@ -35,4 +37,6 @@ public interface TestService {
     void deleteTestResult(Integer id);
     void createFullTest(FullTestDTO dto);
     Test checkDuplicateTest(String title);
+
+    Page<Test> searchTests(String keyword, Pageable pageable);
 }

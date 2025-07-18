@@ -36,6 +36,9 @@ public class Test {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "status")
+    private String status = "not_submitted";
+
 /*
  TODO [Reverse Engineering] create field to map the 'updated_at' column
  Available actions: Define target Java type | Uncomment as is | Remove column mapping
