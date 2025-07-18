@@ -10,12 +10,16 @@ import fpt.aptech.trackmentalhealth.ultis.TestImportErrorResponse;
 import fpt.aptech.trackmentalhealth.ultis.TestImportService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -29,16 +33,31 @@ public class TestController {
 
     // API CUA TEST //
     @GetMapping("/")
-    public ResponseEntity<List<Test>> getTests() {
-        List<Test> tests = testService.getTests();
-        return ResponseEntity.ok().body(tests);
+    public ResponseEntity<Map<String, Object>> getTests(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String search) {
+
+        Pageable pageable = PageRequest.of(page - 1, size);
+        Page<Test> tests;
+
+        if (search != null && !search.isEmpty()) {
+            tests = testService.searchTests(search, pageable);
+        } else {
+            tests = testService.getTests(pageable);
+        }
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("data", tests.getContent());
+        response.put("total", tests.getTotalElements());
+        response.put("currentPage", tests.getNumber() + 1); // Page index starts at 0
+        response.put("totalPages", tests.getTotalPages());
+
+        return ResponseEntity.ok(response);
     }
 
+
     @GetMapping("/{id}")
-//    public ResponseEntity<Test> getTestById(@PathVariable Integer id) {
-//        Test test = testService.getTest(id);
-//        return ResponseEntity.ok().body(test);
-//    }
     public ResponseEntity<TestDetailDTO> getTestById(@PathVariable Integer id) {
         Test test = testService.getTest(id);
         if (test == null) {
@@ -105,8 +124,6 @@ public class TestController {
     }
 
     //API CUA TEST QUESTION
-
-
     @GetMapping("/{id}/question")
     public ResponseEntity<List<TestQuestion>> getTestQuestionsByTestId(@PathVariable Integer id) {
         List<TestQuestion> testQuestions = testService.getTestQuestionsByTestId(id);

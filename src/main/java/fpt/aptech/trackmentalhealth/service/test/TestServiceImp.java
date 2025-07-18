@@ -10,6 +10,8 @@ import fpt.aptech.trackmentalhealth.repository.test.TestOptionRepository;
 import fpt.aptech.trackmentalhealth.repository.test.TestQuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
 import fpt.aptech.trackmentalhealth.repository.test.TestResultRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,8 +34,8 @@ public class TestServiceImp implements TestService {
     }
 
     @Override
-    public List<Test> getTests() {
-        return testRepository.findAll();
+    public Page<Test> getTests(Pageable pageable) {
+        return testRepository.findAll(pageable);
     }
 
     @Override
@@ -186,6 +188,11 @@ public class TestServiceImp implements TestService {
     @Override
     public Test checkDuplicateTest(String title) {
         return testRepository.findByTitleIgnoreCase(title);
+    }
+
+    @Override
+    public Page<Test> searchTests(String keyword, Pageable pageable) {
+        return testRepository.searchTests(keyword, pageable);
     }
 
 
