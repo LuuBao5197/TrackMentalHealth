@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -7,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "TestResults")
+@Table(name = "TestResults",  uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "min_score", "max_score"}))
 public class TestResult {
     @Id
     @Column(name = "id", nullable = false)
@@ -16,7 +17,8 @@ public class TestResult {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "test_id")
-    private fpt.aptech.trackmentalhealth.entities.Test test;
+    @JsonBackReference
+    private Test test;
 
     @Column(name = "min_score")
     private Integer minScore;
@@ -27,5 +29,4 @@ public class TestResult {
     @Lob
     @Column(name = "result_text")
     private String resultText;
-
 }

@@ -6,7 +6,6 @@ import fpt.aptech.trackmentalhealth.entities.TestOption;
 import fpt.aptech.trackmentalhealth.entities.TestQuestion;
 import fpt.aptech.trackmentalhealth.entities.TestResult;
 import fpt.aptech.trackmentalhealth.service.test.TestService;
-import fpt.aptech.trackmentalhealth.ultis.TestImportErrorResponse;
 import fpt.aptech.trackmentalhealth.ultis.TestImportService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -197,6 +196,10 @@ public class TestController {
     public ResponseEntity<TestResult> createTestResult(@RequestBody TestResult testResult) {
         return ResponseEntity.status(HttpStatus.CREATED).body(testService.createTestResult(testResult));
     }
+    @PostMapping("/multiTestResult")
+    public ResponseEntity<List<TestResult>> createMultiTestResult(@RequestBody List<TestResult> testResults) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(testService.createMultipleTestResults(testResults));
+    }
 
     @PutMapping("/testResult/{id}")
     public ResponseEntity<TestResult> updateTestResult(@PathVariable Integer id, @RequestBody TestResult testResult) {
@@ -236,6 +239,13 @@ public class TestController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
+    }
+
+    @GetMapping("/{id}/getMaxScore")
+    public ResponseEntity<Integer> getMaxScore(@PathVariable Integer id) {
+
+         Integer maxScore = testService.getMaxMarkOfTest(id);
+         return ResponseEntity.ok(maxScore);
     }
 
 }
