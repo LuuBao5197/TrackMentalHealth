@@ -39,4 +39,7 @@ public interface TestService {
     Test checkDuplicateTest(String title);
 
     Page<Test> searchTests(String keyword, Pageable pageable);
+    // Ham lay diem toi da cua 1 bai test
+    Integer getMaxMarkOfTest(Integer id);
+    List<TestResult> createMultipleTestResults(List<TestResult> testResults);
 }

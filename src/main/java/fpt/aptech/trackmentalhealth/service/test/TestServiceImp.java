@@ -195,5 +195,25 @@ public class TestServiceImp implements TestService {
         return testRepository.searchTests(keyword, pageable);
     }
 
+    @Override
+    public Integer getMaxMarkOfTest(Integer id) {
+        Test test = getTest(id);
+        if (test.getQuestions() == null) return 0;
+
+        return test.getQuestions().stream()
+                .mapToInt(q -> q.getOptions().stream()
+                        .mapToInt(opt -> opt.getScoreValue() != null ? opt.getScoreValue() : 0)
+                        .max()
+                        .orElse(0)
+                )
+                .sum();
+    }
+
+    @Override
+    public List<TestResult> createMultipleTestResults(List<TestResult> testResults) {
+        testResultRepository.saveAll(testResults);
+        return testResults;
+    }
+
 
 }
