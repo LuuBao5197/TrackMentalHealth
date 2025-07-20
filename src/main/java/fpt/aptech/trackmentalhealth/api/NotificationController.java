@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.api;
 import fpt.aptech.trackmentalhealth.entities.Notification;
 import fpt.aptech.trackmentalhealth.service.Notification.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -12,6 +13,9 @@ import java.util.List;
 public class NotificationController {
     @Autowired
     private NotificationService notificationService;
+
+    @Autowired
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/user/{userId}")
     public List<Notification> getNotificationsByUserId(@PathVariable int userId) {
@@ -24,9 +28,17 @@ public class NotificationController {
     }
 
     @PostMapping("/save")
-    public Notification saveNotification(@RequestBody Notification notification){
-        return notificationService.createNotification(notification);
+    public Notification saveNotification(@RequestBody Notification notification) {
+        Notification saved = notificationService.createNotification(notification);
+
+        // Gửi tới client có subscribe topic này
+        messagingTemplate.convertAndSend(
+                "/topic/notifications/" + saved.getUser().getId(), // gửi riêng cho user
+                saved
+        );
+        return saved;
     }
+
 
     @DeleteMapping("/{id}")
     public void deleteNotification(@PathVariable int id) {

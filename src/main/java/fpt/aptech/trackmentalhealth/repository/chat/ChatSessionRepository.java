@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface ChatSessionRepository extends JpaRepository<ChatSession,Integer> {
 
-    @Query("select cs from ChatSession cs where cs.sender.id=:id")
+    @Query("select cs from ChatSession cs where cs.sender.id=:id or cs.receiver.id=:id")
     List<ChatSession> getChatSessionByUserId(int id);
 
     @Query("select cs from ChatSession cs where cs.id=:id")
