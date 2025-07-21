@@ -18,7 +18,7 @@ public class Question {
     private Long id;
     private String content;
 
-    @Enumerated(EnumType.STRING)
+//    @Enumerated(EnumType.STRING)
 //    private QuestionType type;
 
     private String category;
