@@ -46,6 +46,9 @@ public class Exercise {
     @JoinColumn(name = "created_by")
     private ContentCreator createdBy;
 
+    @Column(name = "photo")
+    private String photo;
+
     @Size(max = 50)
     @Column(name = "status", length = 50)
     private String status;

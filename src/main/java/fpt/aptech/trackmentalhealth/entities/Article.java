@@ -37,6 +37,9 @@ public class Article {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "photo")
+    private String photo;
+
     @Size(max = 255)
     @Nationalized
     @Column(name = "status")
