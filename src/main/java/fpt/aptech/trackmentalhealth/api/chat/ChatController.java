@@ -26,11 +26,26 @@ public class ChatController {
         return chatService.getChatSessionByUserId(userId);
     }
 
-    @GetMapping("/session/{user1}/{user2}")
-    public ChatSession getChatSessionByFromAndTo(@PathVariable int user1,
-                                                 @PathVariable int user2) {
-        return chatService.getChatSessionByFromAndTo(user1, user2);
+    @PostMapping("/session/create")
+    public ChatSession createChatSession(@RequestBody ChatSession chatSession) {
+        return chatService.createChatSession(chatSession);
     }
+
+    @PostMapping("/session/initiate/{senderId}/{receiverId}")
+    public ChatSession initiateChatSession(@PathVariable int senderId, @PathVariable int receiverId) {
+        ChatSession existing = chatService.getChatSessionByFromAndTo(senderId, receiverId);
+        if (existing != null) {
+            return existing;
+        }
+        ChatSession newSession = new ChatSession();
+        newSession.setSender(chatService.findUserById(senderId));  // cần method findUserById trong service
+        newSession.setReceiver(chatService.findUserById(receiverId));
+        newSession.setStartTime(java.time.LocalDateTime.now());
+        newSession.setStatus("active");
+
+        return chatService.createChatSession(newSession);
+    }
+
 
     @PutMapping("/changeStatus/{sessionId}/{receiverId}")
     public void changeStatus(@PathVariable int sessionId, @PathVariable int receiverId) {

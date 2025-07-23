@@ -25,7 +25,7 @@ public class ChatAIController {
     private UserRepository usersRepo;
 
     private final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private final String API_KEY = "Bearer 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";
+    private final String API_KEY = "Bearer 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";
 
     @PostMapping("/ask")
     public ResponseEntity<String> askAI(@RequestBody ChatAIRequest request) {

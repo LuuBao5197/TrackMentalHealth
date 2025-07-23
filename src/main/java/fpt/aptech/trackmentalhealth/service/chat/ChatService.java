@@ -1,9 +1,6 @@
 package fpt.aptech.trackmentalhealth.service.chat;
 
-import fpt.aptech.trackmentalhealth.entities.ChatGroup;
-import fpt.aptech.trackmentalhealth.entities.ChatMessage;
-import fpt.aptech.trackmentalhealth.entities.ChatMessageGroup;
-import fpt.aptech.trackmentalhealth.entities.ChatSession;
+import fpt.aptech.trackmentalhealth.entities.*;
 
 import java.util.List;
 
@@ -16,6 +13,8 @@ public interface ChatService {
     ChatMessage sendMessage(ChatMessage message);
 
     List<ChatSession> getChatSessionByUserId(int id);
+
+    ChatSession createChatSession(ChatSession chatSession);
 
     ChatSession getChatSessionByFromAndTo(int user1, int user2);
 
@@ -40,4 +39,8 @@ public interface ChatService {
     void changeStatusIsRead(int sessionId, int receiverId );
 
     ChatMessageGroup saveMessageToGroup(ChatMessageGroup message);
+
+    List<Users> findUserByGroupId(int groupId,int currentUserId);
+
+    Users findUserById(int id);
 }

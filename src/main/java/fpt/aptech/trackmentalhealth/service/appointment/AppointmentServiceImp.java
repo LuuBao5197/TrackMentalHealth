@@ -12,9 +12,15 @@ public class AppointmentServiceImp implements AppointmentService{
     @Autowired
     AppointmentRepository appointmentRepository;
 
+
+    @Override
+    public List<Appointment> getAppointmentByUserId(int userId) {
+        return appointmentRepository.getAppointmentByUserId(userId);
+    }
+
     @Override
     public List<Appointment> getAppointmentByPsyId(int psyId) {
-        return appointmentRepository.getAppointmentByPsyId(psyId);
+        return appointmentRepository.getAppointmentByPsychologistId(psyId);
     }
 
     @Override
