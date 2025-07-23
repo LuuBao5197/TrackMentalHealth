@@ -18,7 +18,7 @@ public class TestOption {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "question_id")
     @JsonBackReference
-    private fpt.aptech.trackmentalhealth.entities.TestQuestion question;
+    private TestQuestion question;
 
     @Lob
     @Column(name = "option_text")
@@ -29,5 +29,4 @@ public class TestOption {
 
     @Column(name = "option_order")
     private Integer optionOrder;
-
 }

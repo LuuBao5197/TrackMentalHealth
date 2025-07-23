@@ -52,7 +52,7 @@ public class ExerciseController {
             exercise.setEstimatedDuration(request.getEstimatedDuration());
             exercise.setCreatedAt(request.getCreatedAt());
             exercise.setStatus(request.getStatus());
-
+            exercise.setPhoto(request.getPhoto());
             if (request.getCreatedById() != null) {
                 contentCreatorRepository.findById(request.getCreatedById())
                         .ifPresent(exercise::setCreatedBy);
@@ -80,7 +80,7 @@ public class ExerciseController {
             exercise.setEstimatedDuration(request.getEstimatedDuration());
             exercise.setStatus(request.getStatus());
             exercise.setCreatedAt(request.getCreatedAt());
-
+            exercise.setPhoto(request.getPhoto());
             if (request.getCreatedById() != null) {
                 contentCreatorRepository.findById(request.getCreatedById())
                         .ifPresent(exercise::setCreatedBy);

@@ -48,7 +48,7 @@ public class ArticleController {
         article.setContent(request.getContent());
         article.setCreatedAt(request.getCreatedAt());
         article.setStatus(request.getStatus());
-
+        article.setPhoto(request.getPhoto());
         if (request.getAuthor() != null) {
             Users author = userRepository.findById(request.getAuthor())
                     .orElseThrow(() -> new RuntimeException("Author not found"));
@@ -74,7 +74,7 @@ public class ArticleController {
             // 2. Cập nhật các trường có thể thay đổi từ request DTO
             existingArticle.setTitle(request.getTitle());
             existingArticle.setContent(request.getContent());
-
+            existingArticle.setPhoto(request.getPhoto());
             // 3. Xử lý trường 'status'
             // Đảm bảo status từ DTO được chuyển đổi đúng sang kiểu Boolean
             // Nếu bạn muốn status là boolean trong entity, hãy Parse từ string "true"/"false"

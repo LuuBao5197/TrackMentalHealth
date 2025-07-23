@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.dto;
 
 import fpt.aptech.trackmentalhealth.entities.Users; // Cần thiết nếu dùng trong constructor
+import jakarta.persistence.Column;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,7 +16,7 @@ public class ArticleDTO {
     private Integer author; // ID của tác giả
     private LocalDateTime createdAt;
     private String status; // Giữ nguyên là String để khớp với frontend gửi lên "true"/"false"
-
+    private String photo;
     public ArticleDTO() {
     }
 
@@ -23,10 +24,10 @@ public class ArticleDTO {
         this.id = article.getId();
         this.title = article.getTitle();
         this.content = article.getContent();
+        this.photo = article.getPhoto();
 
         // Tránh lỗi NullPointerException khi author là null
         this.author = (article.getAuthor() != null) ? article.getAuthor().getId() : null;
-
         this.createdAt = article.getCreatedAt();
         this.status = article.getStatus(); // Giả định status trong entity cũng là String
     }
