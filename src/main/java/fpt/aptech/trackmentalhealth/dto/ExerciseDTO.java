@@ -18,7 +18,7 @@ public class ExerciseDTO {
     private Integer createdById; // 👈 Chỉ hiển thị id
     private String status;
     private Instant createdAt;
-
+    private String photo;
     public ExerciseDTO() {
     }
 
@@ -27,6 +27,7 @@ public class ExerciseDTO {
         this.title = exercise.getTitle();
         this.instruction = exercise.getInstruction();
         this.mediaUrl = exercise.getMediaUrl();
+        this.photo = exercise.getPhoto();
         this.mediaType = exercise.getMediaType();
         this.estimatedDuration = exercise.getEstimatedDuration();
         this.createdById = (exercise.getCreatedBy() != null) ? exercise.getCreatedBy().getId() : null; // 👈 chỉ lấy id
