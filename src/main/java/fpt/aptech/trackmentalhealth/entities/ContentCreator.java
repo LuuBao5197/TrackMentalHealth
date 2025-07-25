@@ -37,8 +37,7 @@ public class ContentCreator {
 
     @OneToMany(mappedBy = "createdBy")
     private Set<fpt.aptech.trackmentalhealth.entities.Lesson> lessons = new LinkedHashSet<>();
-    @OneToMany(mappedBy = "user")
-    private Set<fpt.aptech.trackmentalhealth.entities.UserLessonProgress> userLessonProgresses = new LinkedHashSet<>();
+
 
 /*
  TODO [Reverse Engineering] create field to map the 'joined_at' column
