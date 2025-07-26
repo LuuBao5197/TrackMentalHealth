@@ -11,7 +11,10 @@ import org.hibernate.annotations.Nationalized;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -104,5 +107,6 @@ public class Users {
     @Column(name = "is_approved")
     private Boolean isApproved = false;
 
-
+    @OneToMany(mappedBy = "user")
+    private Set<UserLessonProgress> userLessonProgresses = new LinkedHashSet<>();
 }
