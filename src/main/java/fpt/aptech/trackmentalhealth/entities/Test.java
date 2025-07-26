@@ -20,7 +20,7 @@ public class Test {
     private Integer id;
 
     @Size(max = 255)
-    @Column(name = "title")
+    @Column(name = "title", unique = true)
     private String title;
 
     @Lob
