@@ -1,10 +1,7 @@
 package fpt.aptech.trackmentalhealth.service.test;
 
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
-import fpt.aptech.trackmentalhealth.entities.Test;
-import fpt.aptech.trackmentalhealth.entities.TestOption;
-import fpt.aptech.trackmentalhealth.entities.TestQuestion;
-import fpt.aptech.trackmentalhealth.entities.TestResult;
+import fpt.aptech.trackmentalhealth.entities.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -42,4 +39,11 @@ public interface TestService {
     // Ham lay diem toi da cua 1 bai test
     Integer getMaxMarkOfTest(Integer id);
     List<TestResult> createMultipleTestResults(List<TestResult> testResults);
+
+    // Cac phuong thuc lien quan den viec luu tru ket qua nguoi dung lam bai Test
+    UserTestAttempt getUserTestAttempt(Integer userId, Integer testId);
+    UserTestAttempt saveUserTestAttempt(UserTestAttempt userTestAttempt);
+    UserTestAnswer getUserTestAnswer(Integer userId, Integer testId);
+    List<UserTestAnswer> saveUserTestAnswer(List<UserTestAnswer> userTestAnswers);
+
 }

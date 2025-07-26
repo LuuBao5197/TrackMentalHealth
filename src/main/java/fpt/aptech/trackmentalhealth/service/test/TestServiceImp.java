@@ -2,14 +2,8 @@ package fpt.aptech.trackmentalhealth.service.test;
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
-import fpt.aptech.trackmentalhealth.entities.Test;
-import fpt.aptech.trackmentalhealth.entities.TestOption;
-import fpt.aptech.trackmentalhealth.entities.TestQuestion;
-import fpt.aptech.trackmentalhealth.entities.TestResult;
-import fpt.aptech.trackmentalhealth.repository.test.TestOptionRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestQuestionRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestResultRepository;
+import fpt.aptech.trackmentalhealth.entities.*;
+import fpt.aptech.trackmentalhealth.repository.test.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -23,14 +17,18 @@ public class TestServiceImp implements TestService {
     TestResultRepository testResultRepository;
     TestQuestionRepository testQuestionRepository;
     TestRepository testRepository;
+    UserTestAttempRepository userTestAttempRepository;
+    UserTestAnswerRepository userTestAnswerRepository;
 
     public TestServiceImp(TestOptionRepository testOptionRepository, TestResultRepository testResultRepository,
-                          TestQuestionRepository testQuestionRepository, TestRepository testRepository) {
+                          TestQuestionRepository testQuestionRepository, TestRepository testRepository,
+                          UserTestAttempRepository userTestAttempRepository, UserTestAnswerRepository userTestAnswerRepository) {
         this.testOptionRepository = testOptionRepository;
         this.testResultRepository = testResultRepository;
         this.testQuestionRepository = testQuestionRepository;
         this.testRepository = testRepository;
-
+        this.userTestAttempRepository = userTestAttempRepository;
+        this.userTestAnswerRepository = userTestAnswerRepository;
     }
 
     @Override
@@ -150,6 +148,9 @@ public class TestServiceImp implements TestService {
     @Transactional
     public void createFullTest(FullTestDTO dto) {
         Test test = new Test();
+        if(dto.getTitle() != null){
+            test.setId(dto.getId().intValue());
+        }
         test.setTitle(dto.getTitle());
         test.setDescription(dto.getDescription());
         test.setInstructions(dto.getInstructions());
@@ -157,6 +158,7 @@ public class TestServiceImp implements TestService {
 
         for (QuestionDTO qDto : dto.getQuestions()) {
             TestQuestion question = new TestQuestion();
+            question.setId(qDto.getId());
             question.setTest(test);
             question.setQuestionText(qDto.getQuestionText());
             question.setQuestionType(qDto.getQuestionType());
@@ -165,6 +167,7 @@ public class TestServiceImp implements TestService {
 
             for (OptionDTO oDto : qDto.getOptions()) {
                 TestOption option = new TestOption();
+                option.setId(oDto.getId());
                 option.setQuestion(question);
                 option.setOptionText(oDto.getOptionText());
                 option.setScoreValue(oDto.getScoreValue());
@@ -214,6 +217,29 @@ public class TestServiceImp implements TestService {
         testResultRepository.saveAll(testResults);
         return testResults;
     }
+
+    @Override
+    public UserTestAttempt getUserTestAttempt(Integer userId, Integer testId) {
+        return userTestAttempRepository.findUserTestAttemptByTestIdAndUserId(testId, userId);
+    }
+
+    @Override
+    public UserTestAttempt saveUserTestAttempt(UserTestAttempt userTestAttempt) {
+        userTestAttempRepository.save(userTestAttempt);
+        return userTestAttempt;
+    }
+
+    @Override
+    public UserTestAnswer getUserTestAnswer(Integer userId, Integer testId) {
+        return userTestAnswerRepository.findUserTestAnswerByQuestionIdAndUserId(testId, userId);
+    }
+
+    @Override
+    public List<UserTestAnswer> saveUserTestAnswer(List<UserTestAnswer> userTestAnswers) {
+         userTestAnswerRepository.saveAll(userTestAnswers);
+         return userTestAnswers;
+    }
+
 
 
 }

@@ -1,10 +1,9 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.test.*;
-import fpt.aptech.trackmentalhealth.entities.Test;
-import fpt.aptech.trackmentalhealth.entities.TestOption;
-import fpt.aptech.trackmentalhealth.entities.TestQuestion;
-import fpt.aptech.trackmentalhealth.entities.TestResult;
+import fpt.aptech.trackmentalhealth.entities.*;
+import fpt.aptech.trackmentalhealth.repository.test.*;
+import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.test.TestService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportValidationException;
@@ -17,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +29,18 @@ public class TestController {
     TestService testService;
     @Autowired
     TestImportService testImportService;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private TestRepository testRepository;
+    @Autowired
+    private TestOptionRepository testOptionRepository;
+    @Autowired
+    private UserTestAttempRepository userTestAttempRepository;
+    @Autowired
+    private TestQuestionRepository testQuestionRepository;
+    @Autowired
+    private UserTestAnswerRepository userTestAnswerRepository;
 
     // API CUA TEST //
     @GetMapping("/")
@@ -241,11 +253,80 @@ public class TestController {
         }
     }
 
+    @PutMapping("/full/{id}")
+    public ResponseEntity<?> updateFullTest(@RequestBody FullTestDTO dto, @PathVariable Integer id) {
+        try {
+            Test testExist = testService.getTest(id);
+            if (testExist == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("error", "Test không tồn tại"));
+            }
+            // Gọi service để cập nhật
+            testService.createFullTest(dto); // giả sử bạn viết hàm update riêng
+            return ResponseEntity.ok(Map.of("message", "Cập nhật bài test thành công"));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+
     @GetMapping("/{id}/getMaxScore")
     public ResponseEntity<Integer> getMaxScore(@PathVariable Integer id) {
 
          Integer maxScore = testService.getMaxMarkOfTest(id);
          return ResponseEntity.ok(maxScore);
+    }
+
+
+    // api luu ket qua va lua chon dap an nguoi dung khi lam bai test
+
+
+    @PostMapping("/submitUserTestResult")
+    public ResponseEntity<String> submitTestResult(@RequestBody TestAnswerRequest request) {
+        // 1. Tìm người dùng và bài test
+        Users user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Test test = testRepository.findById(request.getTestId())
+                .orElseThrow(() -> new RuntimeException("Test not found"));
+
+        // 2. Tạo UserTestAttempt
+        UserTestAttempt attempt = new UserTestAttempt();
+        attempt.setUsers(user);
+        attempt.setTest(test);
+        attempt.setStartedAt(Instant.now()); // Có thể cập nhật nếu frontend gửi thời gian bắt đầu
+        attempt.setCompletedAt(Instant.now());
+        attempt.setResultSummary(request.getResult());
+
+        // Giả sử mỗi Option có trường `score`, ta tính tổng điểm
+        int totalScore = 0;
+        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
+            TestOption selected = testOptionRepository.findById(ans.getSelectedOptionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID: " + ans.getSelectedOptionId()));
+            totalScore += selected.getScoreValue();
+        }
+        attempt.setTotalScore(totalScore);
+        testService.saveUserTestAttempt(attempt);
+//        userTestAttempRepository.save(attempt);
+
+        // 3. Lưu từng UserTestAnswer
+        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
+            UserTestAnswer answer = new UserTestAnswer();
+            // Tạo ID phức hợp
+            UserTestAnswerId id = new UserTestAnswerId();
+            id.setAttemptId(attempt.getId());
+            id.setQuestionId(ans.getQuestionId());
+            id.setSelectedOptionId(ans.getSelectedOptionId());
+            answer.setId(id);
+            answer.setAttempt(attempt);
+            answer.setQuestion(testQuestionRepository.findById(ans.getQuestionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid question ID")));
+            answer.setSelectedOption(testOptionRepository.findById(ans.getSelectedOptionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID")));
+
+            userTestAnswerRepository.save(answer);
+        }
+        return ResponseEntity.ok("Test submitted successfully!");
     }
 
 }
