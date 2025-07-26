@@ -52,8 +52,8 @@ public class LessonService {
             ResponseEntity<String> response = restTemplate.exchange(apiUrl, HttpMethod.POST, entity, String.class);
             return response.getBody().contains("\"flagged\": true");
         } catch (Exception e) {
-            // Trong trường hợp lỗi API, mặc định cho phép để tránh chặn không cần thiết
-            return false;
+            // Nếu lỗi kết nối hoặc API, ném ngoại lệ
+            throw new RuntimeException("Failed to connect to OpenAI API. Please check your API key or network connection.");
         }
     }
 
@@ -89,6 +89,13 @@ public class LessonService {
 
     @Transactional
     public Lesson createOrUpdateLesson(LessonDto dto) {
+        // Kiểm tra kết nối API trước khi xử lý
+        try {
+            isSensitiveContent("test");
+        } catch (RuntimeException e) {
+            throw new RuntimeException("OpenAI API connection failed. Cannot create or update lesson. Please check your API key or network.");
+        }
+
         // Kiểm tra nội dung nhạy cảm trong title, description và các bước
         if (dto.getTitle() != null && isSensitiveContent(dto.getTitle())) {
             throw new RuntimeException("Lesson title contains sensitive content.");
