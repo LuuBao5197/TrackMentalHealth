@@ -16,7 +16,8 @@ public class Quiz {
     private Long id;
 
     private String title;
-
+    private String description;
+    private String status = "NOT_SUBMITTED";
     @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<QuizQuestion> quizQuestions = new HashSet<>();
 }
