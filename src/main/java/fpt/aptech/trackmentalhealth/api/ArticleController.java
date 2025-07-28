@@ -1,11 +1,13 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.ArticleDTO;
+import fpt.aptech.trackmentalhealth.dto.CommentDTO;
 import fpt.aptech.trackmentalhealth.entities.Article;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.article.ArticleRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.article.ArticleService;
+import fpt.aptech.trackmentalhealth.service.article.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/article")
 public class ArticleController {
+    @Autowired
+    CommentService commentService;
+
 
     @Autowired
     ArticleService articleService;
@@ -143,6 +148,27 @@ public class ArticleController {
             return ResponseEntity.ok(articles);
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/{articleId}/comments")
+    public ResponseEntity<List<CommentDTO>> getCommentsByArticleId(@PathVariable Integer articleId) {
+        List<CommentDTO> comments = commentService.getCommentsByArticleId(articleId);
+        return ResponseEntity.ok(comments);
+    }
+
+    @PostMapping("/{articleId}/comments")
+    public ResponseEntity<?> createComment(
+            @PathVariable Integer articleId,
+            @RequestBody CommentDTO commentDTO) {
+        try {
+            // Set articleId vào DTO từ URL
+            commentDTO.setArticleId(articleId);
+
+            CommentDTO saved = commentService.createComment(commentDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 
