@@ -48,4 +48,40 @@ public class CloudinaryService {
         ));
         return result.get("secure_url").toString();
     }
+
+    public String extractPublicId(String url) {
+        // Tìm phần sau "/upload/"
+        String[] parts = url.split("/upload/");
+        if (parts.length < 2) {
+            throw new IllegalArgumentException("URL không hợp lệ");
+        }
+
+        // Lấy phần sau upload, ví dụ: v1234567890/my_folder/my_image.jpg
+        String afterUpload = parts[1];
+
+        // Bỏ phần version nếu có (bắt đầu bằng 'v' + số)
+        String[] segments = afterUpload.split("/");
+        int startIndex = segments[0].matches("^v\\d+$") ? 1 : 0;
+
+        // Lấy tất cả các phần còn lại để tạo public_id
+        StringBuilder publicIdBuilder = new StringBuilder();
+        for (int i = startIndex; i < segments.length; i++) {
+            publicIdBuilder.append(segments[i]);
+            if (i < segments.length - 1) {
+                publicIdBuilder.append("/");
+            }
+        }
+
+        // Bỏ phần đuôi mở rộng (.jpg, .png...)
+        String publicIdWithExtension = publicIdBuilder.toString();
+        int dotIndex = publicIdWithExtension.lastIndexOf('.');
+        return dotIndex != -1 ? publicIdWithExtension.substring(0, dotIndex) : publicIdWithExtension;
+    }
+
+    public boolean deleteFile(String url) throws IOException {
+        String publicId = extractPublicId(url);
+        Map<?, ?> result = cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+        return "ok".equals(result.get("result"));
+    }
+
 }

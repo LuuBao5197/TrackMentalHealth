@@ -33,6 +33,7 @@ public interface TestService {
     TestResult updateTestResult(Integer id, TestResult testResult);
     void deleteTestResult(Integer id);
     void createFullTest(FullTestDTO dto);
+    void updateFullTest(FullTestDTO dto);
     Test checkDuplicateTest(String title);
 
     Page<Test> searchTests(String keyword, Pageable pageable);

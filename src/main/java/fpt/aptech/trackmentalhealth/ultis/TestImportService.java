@@ -329,7 +329,6 @@ public class TestImportService {
             }
 
             testRanges.get(testTitle).add(new int[]{min, max});
-            testRanges.get(testTitle).add(new int[]{min, max});
             testRanges.get(testTitle).sort((a, b) -> Integer.compare(a[0], b[0]));
 
 // Kiểm tra nối tiếp nhau
