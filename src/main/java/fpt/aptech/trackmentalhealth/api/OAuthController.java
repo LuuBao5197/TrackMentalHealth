@@ -1,10 +1,14 @@
 package fpt.aptech.trackmentalhealth.api;
+
 import fpt.aptech.trackmentalhealth.entities.Role;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
+import fpt.aptech.trackmentalhealth.repository.login.RoleRepository;
 import fpt.aptech.trackmentalhealth.ultis.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
@@ -16,6 +20,12 @@ public class OAuthController {
 
     @Autowired
     private LoginRepository loginRepository;
+
+    @Autowired
+    private RoleRepository roleRepository;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     @Autowired
     private JwtUtils jwtUtils;
@@ -37,11 +47,38 @@ public class OAuthController {
             String name = (String) payload.get("name");
             String picture = (String) payload.get("picture");
 
+            Users existingUser = loginRepository.findByEmail(email);
+            Users user;
+
+            if (existingUser != null) {
+                user = existingUser; // đăng nhập user cũ
+            } else {
+                // Tạo user mới
+                Role userRole = roleRepository.findByRoleName("USER")
+                        .orElseThrow(() -> new RuntimeException("Default role USER not found"));
+
+                // Tạo password ngẫu nhiên
+                String randomPassword = UUID.randomUUID().toString();
+
+                // Băm password nếu bạn dùng Spring Security
+                String encodedPassword = passwordEncoder.encode(randomPassword);
+
+                user = new Users();
+                user.setEmail(email);
+                user.setFullname(name);
+                user.setAvatar(picture);
+                user.setRoleId(userRole);
+                user.setPassword(encodedPassword);
+
+                loginRepository.save(user);
+            }
+
             return handleOAuthLogin(email, name, picture);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google OAuth failed: " + e.getMessage());
         }
     }
+
 
     // ========================= FACEBOOK =========================
     @PostMapping("/facebook")
