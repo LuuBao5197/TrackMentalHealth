@@ -2,13 +2,14 @@ package fpt.aptech.trackmentalhealth.repository.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatGroup;
 import fpt.aptech.trackmentalhealth.entities.ChatSession;
+import fpt.aptech.trackmentalhealth.entities.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ChatGroupRepository extends JpaRepository<ChatGroup,Integer> {
+public interface ChatGroupRepository extends JpaRepository<ChatGroup, Integer> {
     @Query("select cs from ChatGroup cs where cs.id=:id")
     ChatGroup getChatGroupById(int id);
 
@@ -18,4 +19,8 @@ public interface ChatGroupRepository extends JpaRepository<ChatGroup,Integer> {
     @Query("select cs from ChatGroup cs where cs.createdBy.id=:id")
     List<ChatGroup> getChatGroupsByUserIdCreated(int id);
 
+    @Query("SELECT DISTINCT m.sender FROM ChatMessageGroup m " +
+            "WHERE m.group.id = :groupId AND m.sender.id <> :currentUserId")
+    List<Users> findUsersByGroupId(@Param("groupId") int groupId,
+                                   @Param("currentUserId") int currentUserId);
 }

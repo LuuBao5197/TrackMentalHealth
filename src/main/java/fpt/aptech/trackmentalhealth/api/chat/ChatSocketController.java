@@ -65,6 +65,7 @@ public class ChatSocketController {
     }
 
     // 👥 Group Chat
+
     @MessageMapping("/chat.group.send")
     public void sendGroupMessage(@Payload GroupMessageDTO dto) {
         // Lấy thông tin nhóm và người gửi
@@ -92,10 +93,14 @@ public class ChatSocketController {
         response.setId(saved.getId());
         response.setGroupId(group.getId());
         response.setContent(saved.getContent());
-        Date date = saved.getSendAt();
-        LocalDateTime localDateTime = date.toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime();
-        response.setSendAt(localDateTime);
+        response.setSenderId(sender.getId()); // ✅ Thêm senderId
         response.setSenderName(sender.getFullname());
+
+        Date date = saved.getSendAt();
+        LocalDateTime localDateTime = date.toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        response.setSendAt(localDateTime);
 
         // Gửi DTO đến các client trong nhóm
         messagingTemplate.convertAndSend("/topic/group/" + dto.getGroupId(), response);
