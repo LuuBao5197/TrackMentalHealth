@@ -8,6 +8,7 @@ import fpt.aptech.trackmentalhealth.repository.article.ArticleRepository;
 import fpt.aptech.trackmentalhealth.repository.article.CommentRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.article.CommentService;
+import fpt.aptech.trackmentalhealth.service.lesson.ContentModerationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +27,10 @@ public class CommentServiceImp implements CommentService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private ContentModerationService contentModerationService;
+
+
     @Override
     public List<CommentDTO> getCommentsByArticleId(Integer articleId) {
         return commentRepository.findByArticle_Id(articleId).stream()
@@ -34,6 +39,14 @@ public class CommentServiceImp implements CommentService {
 
     @Override
     public CommentDTO createComment(CommentDTO dto) {
+        // Kiểm tra kết nối API
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm
+        if (dto.getContent() != null && contentModerationService.isSensitiveContent(dto.getContent())) {
+            throw new RuntimeException("Comment content contains sensitive content.");
+        }
+
         Comment comment = new Comment();
         comment.setContent(dto.getContent());
         comment.setCreatedAt(LocalDateTime.now());
