@@ -3,11 +3,13 @@ package fpt.aptech.trackmentalhealth.service.community;
 import fpt.aptech.trackmentalhealth.entities.CommunityPost;
 import fpt.aptech.trackmentalhealth.entities.PostComment;
 import fpt.aptech.trackmentalhealth.entities.PostReaction;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface CommunityService {
-    List<CommunityPost> getAllCommunityPosts();
+    Page<CommunityPost> getAllCommunityPosts(Pageable pageable);
     List<CommunityPost> getCommunityPostsOfUser(long userId);
     CommunityPost getCommunityPostsByID(long communityId);
     CommunityPost saveCommunityPost(CommunityPost communityPost);
