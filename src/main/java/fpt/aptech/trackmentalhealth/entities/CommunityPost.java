@@ -32,6 +32,7 @@ public class CommunityPost {
     private LocalDate createAt;
 
     @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
     private Set<CommunityPostMedia> mediaList = new LinkedHashSet<>();
 
     @Column(name = "is_anonymous")
@@ -40,6 +41,12 @@ public class CommunityPost {
     @Size(max = 50)
     @Column(name = "status", length = 50)
     private String status;
+
+    @Column(name = "isDeleted")
+    private Boolean isDeleted = Boolean.FALSE;
+
+    @Column(name = "deletedAt")
+    private LocalDate deletedAt;
 
     @OneToMany(mappedBy = "post")
     @JsonManagedReference

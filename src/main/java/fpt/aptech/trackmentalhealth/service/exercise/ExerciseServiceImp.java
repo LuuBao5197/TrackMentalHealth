@@ -3,6 +3,8 @@ package fpt.aptech.trackmentalhealth.service.exercise;
 import fpt.aptech.trackmentalhealth.dto.ExerciseDTO;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
 import fpt.aptech.trackmentalhealth.repository.exercise.ExerciseRepository;
+import fpt.aptech.trackmentalhealth.service.lesson.ContentModerationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -10,6 +12,11 @@ import java.util.List;
 @Service
 public class ExerciseServiceImp implements ExerciseService {
     ExerciseRepository exerciseRepository;
+
+
+
+    @Autowired
+    private ContentModerationService contentModerationService;
 
     public ExerciseServiceImp(ExerciseRepository exerciseRepository) {
         this.exerciseRepository = exerciseRepository;
@@ -29,12 +36,30 @@ public class ExerciseServiceImp implements ExerciseService {
 
     @Override
     public ExerciseDTO createExerciseDTO(Exercise exercise) {
+        // Kiểm tra kết nối API
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm
+        if (exercise.getTitle() != null && contentModerationService.isSensitiveContent(exercise.getTitle())) {
+            throw new RuntimeException("Exercise title contains sensitive content.");
+        }
+
+
         Exercise savedExercise = exerciseRepository.save(exercise);
         return new ExerciseDTO(savedExercise);
     }
 
     @Override
     public ExerciseDTO updateExerciseDTO(Integer id, Exercise exercise) {
+        // Kiểm tra kết nối API
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm
+        if (exercise.getTitle() != null && contentModerationService.isSensitiveContent(exercise.getTitle())) {
+            throw new RuntimeException("Exercise title contains sensitive content.");
+        }
+
+
         Exercise updatedExercise = exerciseRepository.save(exercise);
         return new ExerciseDTO(updatedExercise);
     }

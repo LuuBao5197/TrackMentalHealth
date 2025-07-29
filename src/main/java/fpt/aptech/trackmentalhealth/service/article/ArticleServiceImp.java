@@ -6,13 +6,19 @@ import fpt.aptech.trackmentalhealth.entities.Article;
 import fpt.aptech.trackmentalhealth.entities.Exercise;
 import fpt.aptech.trackmentalhealth.repository.article.ArticleRepository;
 import fpt.aptech.trackmentalhealth.repository.exercise.ExerciseRepository;
+import fpt.aptech.trackmentalhealth.service.lesson.ContentModerationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 public class ArticleServiceImp implements ArticleService {
-    ArticleRepository articleRepository;
+    @Autowired
+    private ArticleRepository articleRepository;
+
+    @Autowired
+    private ContentModerationService contentModerationService;
 
     public ArticleServiceImp(ArticleRepository articleRepository) {
         this.articleRepository = articleRepository;
@@ -32,14 +38,34 @@ public class ArticleServiceImp implements ArticleService {
 
     @Override
     public ArticleDTO createArticleDTO(Article article) {
+        // Kiểm tra kết nối API
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm
+        if (article.getTitle() != null && contentModerationService.isSensitiveContent(article.getTitle())) {
+            throw new RuntimeException("Article title contains sensitive content.");
+        }
+        if (article.getContent() != null && contentModerationService.isSensitiveContent(article.getContent())) {
+            throw new RuntimeException("Article content contains sensitive content.");
+        }
+
         Article savedArticle = articleRepository.save(article);
         return new ArticleDTO(savedArticle);
     }
 
-    // Phương thức này nhận một đối tượng Article đã được cập nhật từ controller
-    // và lưu nó vào cơ sở dữ liệu.
+    @Override
     public ArticleDTO updateArticleDTO(Integer id, Article article) {
-        // Id đã được kiểm tra ở Controller, nên ở đây chỉ cần save
+        // Kiểm tra kết nối API
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm
+        if (article.getTitle() != null && contentModerationService.isSensitiveContent(article.getTitle())) {
+            throw new RuntimeException("Article title contains sensitive content.");
+        }
+        if (article.getContent() != null && contentModerationService.isSensitiveContent(article.getContent())) {
+            throw new RuntimeException("Article content contains sensitive content.");
+        }
+
         Article updatedArticle = articleRepository.save(article);
         return new ArticleDTO(updatedArticle);
     }
