@@ -72,9 +72,10 @@ public class AppointmentController {
         appointmentService.deleteAppointment(id);
     }
 
-    @GetMapping("/psychologist/{psyId}")
-    public List<Appointment> getAppointmentsByPsychologistId(@PathVariable int psyId){
-        return appointmentService.getAppointmentByPsyId(psyId);
+    @GetMapping("/psychologist/{userId}")
+    public List<Appointment> getAppointmentsByPsychologistId(@PathVariable int userId){
+        Psychologist psy = psychologistRepository.getPsychologistByUserId(userId);
+        return appointmentService.getAppointmentByPsyId(psy.getId());
     }
 
 }
