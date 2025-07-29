@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.service.comment;
+package fpt.aptech.trackmentalhealth.service.article;
 
 import fpt.aptech.trackmentalhealth.dto.CommentDTO;
 import fpt.aptech.trackmentalhealth.entities.Article;
