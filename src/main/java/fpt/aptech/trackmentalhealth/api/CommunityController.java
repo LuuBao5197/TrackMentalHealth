@@ -1,60 +1,142 @@
 package fpt.aptech.trackmentalhealth.api;
 
-import fpt.aptech.trackmentalhealth.entities.CommunityPost;
-import fpt.aptech.trackmentalhealth.entities.PostComment;
-import fpt.aptech.trackmentalhealth.entities.PostReaction;
+import fpt.aptech.trackmentalhealth.dto.community.CommunityPostDTO;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.service.community.CommunityService;
+import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.io.ObjectOutput;
 import java.text.MessageFormat;
+import java.time.LocalDate;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
-@Controller
+@RestController
 @RequestMapping("/api/community")
 public class CommunityController {
     final
     CommunityService communityService;
-    public CommunityController(CommunityService communityService) {
+    CloudinaryService cloudinaryService;
+
+    public CommunityController(CommunityService communityService, CloudinaryService cloudinaryService) {
         this.communityService = communityService;
+        this.cloudinaryService = cloudinaryService;
     }
 
     @GetMapping("/post")
-    public ResponseEntity<List<CommunityPost>> getPosts(){
-        List<CommunityPost> communityPosts = communityService.getAllCommunityPosts();
-        return new ResponseEntity<>(communityPosts, HttpStatus.OK);
+    public ResponseEntity<Page<CommunityPostDTO>> getPosts(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size
+    ) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createAt").descending());
+        Page<CommunityPost> posts = communityService.getAllCommunityPosts(pageable);
+        Page<CommunityPostDTO> dtoPage = posts.map(CommunityPostDTO::new);
+        return ResponseEntity.ok(dtoPage);
     }
+
     @GetMapping("/post/{postId}")
-    public ResponseEntity<CommunityPost> getPostsByCommunityId(@PathVariable Integer postId) {
+    public ResponseEntity<CommunityPostDTO> getPostsByCommunityId(@PathVariable Integer postId) {
         CommunityPost communityPost = communityService.getCommunityPostsByID(postId);
-        return ResponseEntity.ok().body(communityPost);
+        CommunityPostDTO dto = new CommunityPostDTO(communityPost);
+        return ResponseEntity.ok().body(dto);
     }
+
     @PostMapping("/post")
-    public ResponseEntity<CommunityPost> createPost(@RequestBody CommunityPost communityPost) {
-        communityService.saveCommunityPost(communityPost);
-        return ResponseEntity.status(HttpStatus.CREATED).body(communityPost);
-    }
-    @PutMapping("/post/{id}")
-  public  ResponseEntity<CommunityPost> updatePost(@PathVariable Integer id, @RequestBody CommunityPost communityPost) {
-        CommunityPost existingPost = communityService.getCommunityPostsByID(id);
-        if (existingPost != null && existingPost.getId().equals(communityPost.getId())) {
-            communityService.saveCommunityPost(communityPost);
-            return ResponseEntity.ok().body(communityPost);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(communityPost);
+    public ResponseEntity<CommunityPost> createPost(
+            @RequestParam("content") String content,
+            @RequestParam("isAnonymous") boolean isAnonymous,
+            @RequestParam("userId") Integer userId,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images) throws IOException {
+
+        if (images != null && images.size() > 3) {
+            return ResponseEntity.badRequest().build();
         }
+        // Lấy user
+        if (userId == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        Users user = new Users();
+        user.setId(userId);
+
+        CommunityPost post = new CommunityPost();
+        post.setContent(content);
+        post.setIsAnonymous(isAnonymous);
+        post.setUser(user);
+        post.setCreateAt(LocalDate.now());
+
+        Set<CommunityPostMedia> mediaList = new LinkedHashSet<>();
+        if (images != null) {
+            for (MultipartFile image : images) {
+                // Lưu file vào server hoặc cloud nếu muốn
+                String filename = cloudinaryService.uploadFile(image); // Viết hàm này để lưu và lấy URL
+                CommunityPostMedia media = new CommunityPostMedia();
+                media.setMediaUrl(filename); // hoặc URL nếu dùng cloud
+                media.setPost(post); // gắn post cha
+                mediaList.add(media);
+            }
+        }
+        post.setMediaList(mediaList);
+        communityService.saveCommunityPost(post);
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
+
+    @PutMapping("/post/{id}")
+    public ResponseEntity<CommunityPost> updatePost(
+            @PathVariable Integer id,
+            @RequestParam("content") String content,
+            @RequestParam("isAnonymous") boolean isAnonymous,
+            @RequestParam("userId") Integer userId,
+            @RequestParam(value = "images", required = false) List<MultipartFile> images
+    ) throws IOException {
+
+        CommunityPost existingPost = communityService.getCommunityPostsByID(id);
+        if (existingPost == null || !existingPost.getUser().getId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+
+        if (images != null && !images.isEmpty()) {
+            for (CommunityPostMedia oldMedia : existingPost.getMediaList()) {
+                cloudinaryService.deleteFile(oldMedia.getMediaUrl());
+            }
+            existingPost.getMediaList().clear();
+
+            Set<CommunityPostMedia> newMediaList = new LinkedHashSet<>();
+            for (MultipartFile image : images) {
+                String url = cloudinaryService.uploadFile(image);
+                CommunityPostMedia media = new CommunityPostMedia();
+                media.setMediaUrl(url);
+                media.setPost(existingPost);
+                newMediaList.add(media);
+            }
+            existingPost.setMediaList(newMediaList);
+        }
+
+        existingPost.setContent(content);
+        existingPost.setIsAnonymous(isAnonymous);
+        communityService.saveCommunityPost(existingPost);
+        return ResponseEntity.ok(existingPost);
+    }
+
+
     @DeleteMapping("/post/{id}")
     public ResponseEntity<CommunityPost> deletePost(@PathVariable Long id) {
         CommunityPost communityPost = communityService.getCommunityPostsByID(id);
         if (communityPost != null) {
             communityService.deleteCommunityPost(id);
             return ResponseEntity.ok().body(communityPost);
-        }else
+        } else
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
     }
 
@@ -94,7 +176,7 @@ public class CommunityController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
     }
 
-//    API reaction
+    //    API reaction
     @GetMapping("/post/{id}/reaction")
     public ResponseEntity<List<PostReaction>> getReactionsByPostId(@PathVariable Long id) {
         List<PostReaction> list = communityService.getReactions(id);

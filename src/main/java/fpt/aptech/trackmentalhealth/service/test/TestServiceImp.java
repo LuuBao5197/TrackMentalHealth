@@ -4,12 +4,17 @@ import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TestServiceImp implements TestService {
@@ -187,6 +192,84 @@ public class TestServiceImp implements TestService {
 //            }
 //        }
     }
+    @Transactional
+    @Override
+    public void updateFullTest(FullTestDTO dto) {
+        // 1. Tìm test cần cập nhật
+        Test test = testRepository.findById(dto.getId().intValue())
+                .orElseThrow(() -> new EntityNotFoundException("Test not found"));
+
+        // 2. Cập nhật thông tin test
+        test.setTitle(dto.getTitle());
+        test.setDescription(dto.getDescription());
+        test.setInstructions(dto.getInstructions());
+        test = testRepository.save(test);
+
+        // 3. Lấy danh sách câu hỏi hiện tại
+        List<TestQuestion> existingQuestions = getTestQuestionsByTestId(test.getId());
+        Map<Long, TestQuestion> existingQuestionMap = existingQuestions.stream()
+                .collect(Collectors.toMap(q -> q.getId().longValue(), q -> q));
+
+        Set<Long> incomingQuestionIds = new HashSet<>();
+
+        for (QuestionDTO qDto : dto.getQuestions()) {
+            TestQuestion question;
+            if (qDto.getId() != null && existingQuestionMap.containsKey(qDto.getId())) {
+                question = existingQuestionMap.get(qDto.getId());
+            } else {
+                question = new TestQuestion();
+                question.setTest(test);
+            }
+
+            question.setQuestionText(qDto.getQuestionText());
+            question.setQuestionType(qDto.getQuestionType());
+            question.setQuestionOrder(qDto.getQuestionOrder());
+            question = testQuestionRepository.save(question);
+
+            incomingQuestionIds.add(question.getId().longValue());
+
+            // Đáp án hiện tại
+            List<TestOption> existingOptions = getTestOptionsByTestQuestionId(question.getId());
+            Map<Long, TestOption> existingOptionMap = existingOptions.stream()
+                    .filter(o -> o.getId() != null)
+                    .collect(Collectors.toMap(o -> o.getId().longValue(), o -> o));
+
+            Set<Long> incomingOptionIds = new HashSet<>();
+            for (OptionDTO oDto : qDto.getOptions()) {
+                TestOption option;
+                if (oDto.getId() != null && existingOptionMap.containsKey(oDto.getId())) {
+                    option = existingOptionMap.get(oDto.getId());
+                } else {
+                    option = new TestOption();
+                    option.setQuestion(question);
+                }
+
+                option.setOptionText(oDto.getOptionText());
+                option.setScoreValue(oDto.getScoreValue());
+                option.setOptionOrder(oDto.getOptionOrder());
+                option = testOptionRepository.save(option);
+
+                incomingOptionIds.add(option.getId().longValue());
+            }
+
+            // Xóa đáp án bị loại bỏ
+            for (TestOption option : existingOptions) {
+                if (!incomingOptionIds.contains(option.getId().longValue())) {
+                    testOptionRepository.delete(option);
+                }
+            }
+        }
+
+        // 6. Xóa câu hỏi bị loại bỏ
+        for (TestQuestion question : existingQuestions) {
+            if (!incomingQuestionIds.contains(question.getId().longValue())) {
+                testOptionRepository.deleteAll(getTestOptionsByTestQuestionId(question.getId()));
+                testQuestionRepository.delete(question);
+            }
+        }
+    }
+
+
 
     @Override
     public Test checkDuplicateTest(String title) {

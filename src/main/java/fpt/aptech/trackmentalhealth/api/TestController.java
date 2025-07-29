@@ -262,7 +262,7 @@ public class TestController {
                         .body(Map.of("error", "Test không tồn tại"));
             }
             // Gọi service để cập nhật
-            testService.createFullTest(dto); // giả sử bạn viết hàm update riêng
+            testService.updateFullTest(dto); // giả sử bạn viết hàm update riêng
             return ResponseEntity.ok(Map.of("message", "Cập nhật bài test thành công"));
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
