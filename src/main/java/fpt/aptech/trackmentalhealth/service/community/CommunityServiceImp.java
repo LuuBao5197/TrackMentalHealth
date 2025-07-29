@@ -24,7 +24,7 @@ public class CommunityServiceImp implements CommunityService {
 
     @Override
     public Page<CommunityPost> getAllCommunityPosts(Pageable pageable) {
-        return communityPostRepository.findAll(pageable);
+        return communityPostRepository.findByIsDeletedFalse(pageable);
     }
 
     @Override
