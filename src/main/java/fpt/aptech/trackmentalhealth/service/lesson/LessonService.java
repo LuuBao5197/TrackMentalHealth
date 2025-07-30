@@ -8,6 +8,7 @@ import fpt.aptech.trackmentalhealth.entities.LessonStep;
 import fpt.aptech.trackmentalhealth.repository.contentcreator.ContentCreatorRepository;
 import fpt.aptech.trackmentalhealth.repository.lesson.LessonRepository;
 import fpt.aptech.trackmentalhealth.repository.lesson.LessonStepRepository;
+
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,9 @@ public class LessonService {
 
     @Autowired
     private ContentCreatorRepository contentCreatorRepository;
+
+    @Autowired
+    private ContentModerationService contentModerationService;
 
     public List<LessonDto> getAllLessons() {
         List<Lesson> lessons = lessonRepository.findAll();
@@ -59,6 +63,27 @@ public class LessonService {
 
     @Transactional
     public Lesson createOrUpdateLesson(LessonDto dto) {
+        // Kiểm tra kết nối API trước khi xử lý
+        contentModerationService.checkApiConnection();
+
+        // Kiểm tra nội dung nhạy cảm trong title, description và các bước
+        if (dto.getTitle() != null && contentModerationService.isSensitiveContent(dto.getTitle())) {
+            throw new RuntimeException("Lesson title contains sensitive content.");
+        }
+        if (dto.getDescription() != null && contentModerationService.isSensitiveContent(dto.getDescription())) {
+            throw new RuntimeException("Lesson description contains sensitive content.");
+        }
+        if (dto.getLessonSteps() != null) {
+            for (LessonStepDto stepDto : dto.getLessonSteps()) {
+                if (stepDto.getTitle() != null && contentModerationService.isSensitiveContent(stepDto.getTitle())) {
+                    throw new RuntimeException("Step title contains sensitive content.");
+                }
+                if (stepDto.getContent() != null && contentModerationService.isSensitiveContent(stepDto.getContent())) {
+                    throw new RuntimeException("Step content contains sensitive content.");
+                }
+            }
+        }
+
         Lesson lesson = (dto.getId() != null)
                 ? lessonRepository.findById(dto.getId()).orElse(new Lesson())
                 : new Lesson();
@@ -143,6 +168,7 @@ public class LessonService {
             return stepDto;
         }).collect(Collectors.toList());
     }
+
     public LessonStepDto getLessonStepById(Integer lessonId, Integer stepId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + lessonId));
@@ -162,6 +188,7 @@ public class LessonService {
 
         return stepDto;
     }
+
     public List<LessonDto> getLessonsByCreatorId(Integer creatorId) {
         List<Lesson> lessons = lessonRepository.findByCreatedBy_Id(creatorId);
 
@@ -191,5 +218,4 @@ public class LessonService {
             return dto;
         }).collect(Collectors.toList());
     }
-
 }

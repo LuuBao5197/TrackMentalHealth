@@ -6,6 +6,7 @@ import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.chat.ChatHistoryRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +19,9 @@ import java.util.*;
 @CrossOrigin
 public class ChatAIController {
 
+    @Value("${api.key}")
+    private String aiKey;
+
     @Autowired
     private ChatHistoryRepository chatHistoryRepo;
 
@@ -25,15 +29,17 @@ public class ChatAIController {
     private UserRepository usersRepo;
 
     private final String API_URL = "https://api.openai.com/v1/chat/completions";
-    private final String API_KEY = "Bearer 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"; // 🔒 Replace with your real key
+
 
     @PostMapping("/ask")
     public ResponseEntity<String> askAI(@RequestBody ChatAIRequest request) {
+        System.out.println("AI KEY:" + aiKey);
+
         try {
+            String API_KEY = "Bearer " + aiKey;
+
             String message = request.getMessage();
             int userId = request.getUserId();
-
-            System.out.println("DEBUG request: message=" + message + ", userId=" + userId);
 
             if (message == null || message.isEmpty()) {
                 return ResponseEntity.badRequest().body("Thiếu message");
@@ -46,7 +52,7 @@ public class ChatAIController {
 
             Users user = optionalUser.get();
 
-            // 📝 Lưu tin nhắn user
+            // Lưu tin nhắn user
             ChatHistory userChat = new ChatHistory();
             userChat.setUser(user);
             userChat.setRole("user");
@@ -54,7 +60,7 @@ public class ChatAIController {
             userChat.setTimestamp(LocalDateTime.now());
             chatHistoryRepo.save(userChat);
 
-            // 🔗 Gọi OpenAI
+            // Gọi OpenAI API
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -62,10 +68,7 @@ public class ChatAIController {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
-
-            List<Map<String, String>> messages = new ArrayList<>();
-            messages.add(Map.of("role", "user", "content", message));
-            body.put("messages", messages);
+            body.put("messages", List.of(Map.of("role", "user", "content", message)));
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
@@ -85,7 +88,7 @@ public class ChatAIController {
                         Map messageMap = (Map) choice.get("message");
                         String aiContent = (String) messageMap.get("content");
 
-                        // 📝 Lưu tin nhắn AI
+                        // Lưu tin nhắn AI
                         ChatHistory aiChat = new ChatHistory();
                         aiChat.setUser(user);
                         aiChat.setRole("ai");
@@ -105,7 +108,6 @@ public class ChatAIController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Lỗi server: " + e.getMessage());
         }
     }
-
     @GetMapping("/history/{userId}")
     public ResponseEntity<List<ChatHistory>> getHistory(@PathVariable int userId) {
         Optional<Users> optionalUser = usersRepo.findById(userId);

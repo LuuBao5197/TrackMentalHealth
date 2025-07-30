@@ -1,10 +1,12 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -26,9 +28,12 @@ public class CommunityPost {
     @Column(name = "content")
     private String content;
 
-    @Lob
-    @Column(name = "media_url")
-    private String mediaUrl;
+    @Column(name = "create_at")
+    private LocalDate createAt;
+
+    @OneToMany(mappedBy = "post", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private Set<CommunityPostMedia> mediaList = new LinkedHashSet<>();
 
     @Column(name = "is_anonymous")
     private Boolean isAnonymous;
@@ -37,10 +42,18 @@ public class CommunityPost {
     @Column(name = "status", length = 50)
     private String status;
 
+    @Column(name = "isDeleted")
+    private Boolean isDeleted = Boolean.FALSE;
+
+    @Column(name = "deletedAt")
+    private LocalDate deletedAt;
+
     @OneToMany(mappedBy = "post")
-    private Set<fpt.aptech.trackmentalhealth.entities.PostComment> postComments = new LinkedHashSet<>();
+    @JsonManagedReference
+    private Set<PostComment> postComments = new LinkedHashSet<>();
     @OneToMany(mappedBy = "post")
-    private Set<fpt.aptech.trackmentalhealth.entities.PostReaction> postReactions = new LinkedHashSet<>();
+    @JsonManagedReference
+    private Set<PostReaction> postReactions = new LinkedHashSet<>();
 
 /*
  TODO [Reverse Engineering] create field to map the 'created_at' column

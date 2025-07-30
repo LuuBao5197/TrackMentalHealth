@@ -16,19 +16,24 @@ public class Notification {
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private Users user;
+
+    @Column(columnDefinition = "NVARCHAR(50)")
     private String type;
+
     private boolean isRead;
+
+    @Column(columnDefinition = "NVARCHAR(255)")
     private String title;
 
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "NVARCHAR(500)")
     private String des;
 
+    @Column(columnDefinition = "NVARCHAR(1000)")
     private String message;
 
     private LocalDateTime datetime;
 
-    public Notification() {
-    }
+    public Notification() {}
 
     public Notification(Users user, String type, boolean isRead, String title, String des, String message, LocalDateTime datetime) {
         this.user = user;
@@ -39,5 +44,4 @@ public class Notification {
         this.message = message;
         this.datetime = datetime;
     }
-
 }

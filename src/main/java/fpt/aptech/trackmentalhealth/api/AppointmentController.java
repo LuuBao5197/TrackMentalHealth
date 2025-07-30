@@ -26,9 +26,9 @@ public class AppointmentController {
     @Autowired
     private AppointmentService appointmentService;
 
-    @GetMapping("/list/{psyId}")
-    public List<Appointment> getAppointmentByPsyId(@PathVariable int psyId) {
-        return appointmentService.getAppointmentByPsyId(psyId);
+    @GetMapping("/list/{userId}")
+    public List<Appointment> getAppointmentByUserId(@PathVariable int userId) {
+        return appointmentService.getAppointmentByUserId(userId);
     }
 
     @GetMapping("/{id}")
@@ -71,4 +71,11 @@ public class AppointmentController {
     public void deleteAppointment(@PathVariable int id) {
         appointmentService.deleteAppointment(id);
     }
+
+    @GetMapping("/psychologist/{userId}")
+    public List<Appointment> getAppointmentsByPsychologistId(@PathVariable int userId){
+        Psychologist psy = psychologistRepository.getPsychologistByUserId(userId);
+        return appointmentService.getAppointmentByPsyId(psy.getId());
+    }
+
 }

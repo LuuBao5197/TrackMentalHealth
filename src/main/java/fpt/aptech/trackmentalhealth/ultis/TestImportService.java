@@ -206,8 +206,8 @@ public class TestImportService {
         }
 
         for (Map.Entry<String, Integer> entry : questionCountMap.entrySet()) {
-            if (entry.getValue() < 5) {
-                errors.add("❌ Test '" + entry.getKey() + "' phải có ít nhất 5 câu hỏi.");
+            if (entry.getValue() < 3) {
+                errors.add("❌ Test '" + entry.getKey() + "' phải có ít nhất 3 câu hỏi.");
             }
         }
 
@@ -237,28 +237,21 @@ public class TestImportService {
     private void saveOptions(Sheet sheet, Map<String, TestQuestion> questionMap) {
         Map<String, Map<Integer, Boolean>> orderCheck = new HashMap<>();
         Map<String, Map<Integer, Boolean>> scoreCheck = new HashMap<>();
-        Map<String, Integer> countOptionsPerQuestion = new HashMap<>();
         List<String> errors = new ArrayList<>();
 
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            String questionText = row.getCell(0).getStringCellValue().trim();
-            int optionOrder = (int) row.getCell(3).getNumericCellValue();
-            int score = (int) row.getCell(2).getNumericCellValue();
+            String questionText = row.getCell(0) != null ? row.getCell(0).getStringCellValue().trim() : "";
 
             if (!questionMap.containsKey(questionText)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Câu hỏi '" + questionText + "' không tồn tại.");
                 continue;
             }
 
-            if (optionOrder < 1 || optionOrder > 4) {
-                errors.add("❌ Dòng " + (i + 1) + ": Thứ tự đáp án phải từ 1 đến 4.");
-            }
+            int optionOrder = (int) row.getCell(3).getNumericCellValue();
+            int score = (int) row.getCell(2).getNumericCellValue();
 
-            if (score < 1 || score > 4) {
-                errors.add("❌ Dòng " + (i + 1) + ": Điểm phải từ 1 đến 4.");
-            }
-
+            // Kiểm tra trùng thứ tự đáp án trong cùng câu hỏi
             orderCheck.putIfAbsent(questionText, new HashMap<>());
             if (orderCheck.get(questionText).containsKey(optionOrder)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Trùng thứ tự đáp án " + optionOrder + " trong câu hỏi '" + questionText + "'");
@@ -266,19 +259,12 @@ public class TestImportService {
                 orderCheck.get(questionText).put(optionOrder, true);
             }
 
+            // Kiểm tra trùng điểm số trong cùng câu hỏi
             scoreCheck.putIfAbsent(questionText, new HashMap<>());
             if (scoreCheck.get(questionText).containsKey(score)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Trùng điểm số " + score + " trong câu hỏi '" + questionText + "'");
             } else {
                 scoreCheck.get(questionText).put(score, true);
-            }
-
-            countOptionsPerQuestion.put(questionText, countOptionsPerQuestion.getOrDefault(questionText, 0) + 1);
-        }
-
-        for (Map.Entry<String, Integer> entry : countOptionsPerQuestion.entrySet()) {
-            if (entry.getValue() != 4) {
-                errors.add("❌ Câu hỏi '" + entry.getKey() + "' phải có đúng 4 đáp án.");
             }
         }
 
@@ -319,8 +305,8 @@ public class TestImportService {
             int max = (int) row.getCell(2).getNumericCellValue();
             int maxPossible = (int) (questionCountMap.getOrDefault(testTitle, 0L) * 4);
 
-            if (min <= 0) {
-                errors.add("❌ Dòng " + (i + 1) + ": minScore phải > 0.");
+            if (min < 0) {
+                errors.add("❌ Dòng " + (i + 1) + ": minScore phải >= 0.");
             }
 
             if (max > maxPossible) {
@@ -343,6 +329,19 @@ public class TestImportService {
             }
 
             testRanges.get(testTitle).add(new int[]{min, max});
+            testRanges.get(testTitle).sort((a, b) -> Integer.compare(a[0], b[0]));
+
+// Kiểm tra nối tiếp nhau
+            List<int[]> ranges = testRanges.get(testTitle);
+            for (int j = 1; j < ranges.size(); j++) {
+                int[] prev = ranges.get(j - 1);
+                int[] curr = ranges.get(j);
+                if (curr[0] != prev[1] + 1) {
+                    errors.add("❌ Test '" + testTitle + "' có khoảng điểm không liên tiếp giữa (" +
+                            prev[0] + "-" + prev[1] + ") và (" + curr[0] + "-" + curr[1] + ")");
+                }
+            }
+
         }
 
         if (!errors.isEmpty()) {

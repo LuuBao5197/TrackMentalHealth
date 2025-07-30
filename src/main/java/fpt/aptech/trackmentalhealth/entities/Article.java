@@ -7,6 +7,7 @@ import lombok.Setter;
 import org.hibernate.annotations.Nationalized;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -37,10 +38,16 @@ public class Article {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @Column(name = "photo")
+    private String photo;
+
     @Size(max = 255)
     @Nationalized
     @Column(name = "status")
     private String status;
+
+    @OneToMany(mappedBy = "article", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Comment> comments;
 
 /*
  TODO [Reverse Engineering] create field to map the 'update_at' column

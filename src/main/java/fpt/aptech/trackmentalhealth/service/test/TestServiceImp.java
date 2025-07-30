@@ -2,20 +2,19 @@ package fpt.aptech.trackmentalhealth.service.test;
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
-import fpt.aptech.trackmentalhealth.entities.Test;
-import fpt.aptech.trackmentalhealth.entities.TestOption;
-import fpt.aptech.trackmentalhealth.entities.TestQuestion;
-import fpt.aptech.trackmentalhealth.entities.TestResult;
-import fpt.aptech.trackmentalhealth.repository.test.TestOptionRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestQuestionRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
-import fpt.aptech.trackmentalhealth.repository.test.TestResultRepository;
+import fpt.aptech.trackmentalhealth.entities.*;
+import fpt.aptech.trackmentalhealth.repository.test.*;
+import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class TestServiceImp implements TestService {
@@ -23,14 +22,18 @@ public class TestServiceImp implements TestService {
     TestResultRepository testResultRepository;
     TestQuestionRepository testQuestionRepository;
     TestRepository testRepository;
+    UserTestAttempRepository userTestAttempRepository;
+    UserTestAnswerRepository userTestAnswerRepository;
 
     public TestServiceImp(TestOptionRepository testOptionRepository, TestResultRepository testResultRepository,
-                          TestQuestionRepository testQuestionRepository, TestRepository testRepository) {
+                          TestQuestionRepository testQuestionRepository, TestRepository testRepository,
+                          UserTestAttempRepository userTestAttempRepository, UserTestAnswerRepository userTestAnswerRepository) {
         this.testOptionRepository = testOptionRepository;
         this.testResultRepository = testResultRepository;
         this.testQuestionRepository = testQuestionRepository;
         this.testRepository = testRepository;
-
+        this.userTestAttempRepository = userTestAttempRepository;
+        this.userTestAnswerRepository = userTestAnswerRepository;
     }
 
     @Override
@@ -150,6 +153,9 @@ public class TestServiceImp implements TestService {
     @Transactional
     public void createFullTest(FullTestDTO dto) {
         Test test = new Test();
+        if(dto.getTitle() != null){
+            test.setId(dto.getId().intValue());
+        }
         test.setTitle(dto.getTitle());
         test.setDescription(dto.getDescription());
         test.setInstructions(dto.getInstructions());
@@ -157,6 +163,7 @@ public class TestServiceImp implements TestService {
 
         for (QuestionDTO qDto : dto.getQuestions()) {
             TestQuestion question = new TestQuestion();
+            question.setId(qDto.getId());
             question.setTest(test);
             question.setQuestionText(qDto.getQuestionText());
             question.setQuestionType(qDto.getQuestionType());
@@ -165,6 +172,7 @@ public class TestServiceImp implements TestService {
 
             for (OptionDTO oDto : qDto.getOptions()) {
                 TestOption option = new TestOption();
+                option.setId(oDto.getId());
                 option.setQuestion(question);
                 option.setOptionText(oDto.getOptionText());
                 option.setScoreValue(oDto.getScoreValue());
@@ -184,6 +192,84 @@ public class TestServiceImp implements TestService {
 //            }
 //        }
     }
+    @Transactional
+    @Override
+    public void updateFullTest(FullTestDTO dto) {
+        // 1. Tìm test cần cập nhật
+        Test test = testRepository.findById(dto.getId().intValue())
+                .orElseThrow(() -> new EntityNotFoundException("Test not found"));
+
+        // 2. Cập nhật thông tin test
+        test.setTitle(dto.getTitle());
+        test.setDescription(dto.getDescription());
+        test.setInstructions(dto.getInstructions());
+        test = testRepository.save(test);
+
+        // 3. Lấy danh sách câu hỏi hiện tại
+        List<TestQuestion> existingQuestions = getTestQuestionsByTestId(test.getId());
+        Map<Long, TestQuestion> existingQuestionMap = existingQuestions.stream()
+                .collect(Collectors.toMap(q -> q.getId().longValue(), q -> q));
+
+        Set<Long> incomingQuestionIds = new HashSet<>();
+
+        for (QuestionDTO qDto : dto.getQuestions()) {
+            TestQuestion question;
+            if (qDto.getId() != null && existingQuestionMap.containsKey(qDto.getId())) {
+                question = existingQuestionMap.get(qDto.getId());
+            } else {
+                question = new TestQuestion();
+                question.setTest(test);
+            }
+
+            question.setQuestionText(qDto.getQuestionText());
+            question.setQuestionType(qDto.getQuestionType());
+            question.setQuestionOrder(qDto.getQuestionOrder());
+            question = testQuestionRepository.save(question);
+
+            incomingQuestionIds.add(question.getId().longValue());
+
+            // Đáp án hiện tại
+            List<TestOption> existingOptions = getTestOptionsByTestQuestionId(question.getId());
+            Map<Long, TestOption> existingOptionMap = existingOptions.stream()
+                    .filter(o -> o.getId() != null)
+                    .collect(Collectors.toMap(o -> o.getId().longValue(), o -> o));
+
+            Set<Long> incomingOptionIds = new HashSet<>();
+            for (OptionDTO oDto : qDto.getOptions()) {
+                TestOption option;
+                if (oDto.getId() != null && existingOptionMap.containsKey(oDto.getId())) {
+                    option = existingOptionMap.get(oDto.getId());
+                } else {
+                    option = new TestOption();
+                    option.setQuestion(question);
+                }
+
+                option.setOptionText(oDto.getOptionText());
+                option.setScoreValue(oDto.getScoreValue());
+                option.setOptionOrder(oDto.getOptionOrder());
+                option = testOptionRepository.save(option);
+
+                incomingOptionIds.add(option.getId().longValue());
+            }
+
+            // Xóa đáp án bị loại bỏ
+            for (TestOption option : existingOptions) {
+                if (!incomingOptionIds.contains(option.getId().longValue())) {
+                    testOptionRepository.delete(option);
+                }
+            }
+        }
+
+        // 6. Xóa câu hỏi bị loại bỏ
+        for (TestQuestion question : existingQuestions) {
+            if (!incomingQuestionIds.contains(question.getId().longValue())) {
+                testOptionRepository.deleteAll(getTestOptionsByTestQuestionId(question.getId()));
+                testQuestionRepository.delete(question);
+            }
+        }
+    }
+
+
 
     @Override
     public Test checkDuplicateTest(String title) {
@@ -194,6 +280,49 @@ public class TestServiceImp implements TestService {
     public Page<Test> searchTests(String keyword, Pageable pageable) {
         return testRepository.searchTests(keyword, pageable);
     }
+
+    @Override
+    public Integer getMaxMarkOfTest(Integer id) {
+        Test test = getTest(id);
+        if (test.getQuestions() == null) return 0;
+
+        return test.getQuestions().stream()
+                .mapToInt(q -> q.getOptions().stream()
+                        .mapToInt(opt -> opt.getScoreValue() != null ? opt.getScoreValue() : 0)
+                        .max()
+                        .orElse(0)
+                )
+                .sum();
+    }
+
+    @Override
+    public List<TestResult> createMultipleTestResults(List<TestResult> testResults) {
+        testResultRepository.saveAll(testResults);
+        return testResults;
+    }
+
+    @Override
+    public UserTestAttempt getUserTestAttempt(Integer userId, Integer testId) {
+        return userTestAttempRepository.findUserTestAttemptByTestIdAndUserId(testId, userId);
+    }
+
+    @Override
+    public UserTestAttempt saveUserTestAttempt(UserTestAttempt userTestAttempt) {
+        userTestAttempRepository.save(userTestAttempt);
+        return userTestAttempt;
+    }
+
+    @Override
+    public UserTestAnswer getUserTestAnswer(Integer userId, Integer testId) {
+        return userTestAnswerRepository.findUserTestAnswerByQuestionIdAndUserId(testId, userId);
+    }
+
+    @Override
+    public List<UserTestAnswer> saveUserTestAnswer(List<UserTestAnswer> userTestAnswers) {
+         userTestAnswerRepository.saveAll(userTestAnswers);
+         return userTestAnswers;
+    }
+
 
 
 }

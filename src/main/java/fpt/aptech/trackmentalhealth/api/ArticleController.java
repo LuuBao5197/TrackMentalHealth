@@ -1,11 +1,13 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.ArticleDTO;
+import fpt.aptech.trackmentalhealth.dto.CommentDTO;
 import fpt.aptech.trackmentalhealth.entities.Article;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import fpt.aptech.trackmentalhealth.repository.article.ArticleRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.article.ArticleService;
+import fpt.aptech.trackmentalhealth.service.article.CommentService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,9 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/article")
 public class ArticleController {
+    @Autowired
+    CommentService commentService;
+
 
     @Autowired
     ArticleService articleService;
@@ -48,7 +53,7 @@ public class ArticleController {
         article.setContent(request.getContent());
         article.setCreatedAt(request.getCreatedAt());
         article.setStatus(request.getStatus());
-
+        article.setPhoto(request.getPhoto());
         if (request.getAuthor() != null) {
             Users author = userRepository.findById(request.getAuthor())
                     .orElseThrow(() -> new RuntimeException("Author not found"));
@@ -74,7 +79,7 @@ public class ArticleController {
             // 2. Cập nhật các trường có thể thay đổi từ request DTO
             existingArticle.setTitle(request.getTitle());
             existingArticle.setContent(request.getContent());
-
+            existingArticle.setPhoto(request.getPhoto());
             // 3. Xử lý trường 'status'
             // Đảm bảo status từ DTO được chuyển đổi đúng sang kiểu Boolean
             // Nếu bạn muốn status là boolean trong entity, hãy Parse từ string "true"/"false"
@@ -143,6 +148,27 @@ public class ArticleController {
             return ResponseEntity.ok(articles);
         } catch (RuntimeException ex) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
+
+    @GetMapping("/{articleId}/comments")
+    public ResponseEntity<List<CommentDTO>> getCommentsByArticleId(@PathVariable Integer articleId) {
+        List<CommentDTO> comments = commentService.getCommentsByArticleId(articleId);
+        return ResponseEntity.ok(comments);
+    }
+
+    @PostMapping("/{articleId}/comments")
+    public ResponseEntity<?> createComment(
+            @PathVariable Integer articleId,
+            @RequestBody CommentDTO commentDTO) {
+        try {
+            // Set articleId vào DTO từ URL
+            commentDTO.setArticleId(articleId);
+
+            CommentDTO saved = commentService.createComment(commentDTO);
+            return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 

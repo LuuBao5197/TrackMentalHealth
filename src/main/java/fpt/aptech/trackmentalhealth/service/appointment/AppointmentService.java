@@ -5,7 +5,9 @@ import fpt.aptech.trackmentalhealth.entities.Appointment;
 import java.util.List;
 
 public interface AppointmentService {
-    List<Appointment> getAppointmentByPsyId(int id);
+    List<Appointment> getAppointmentByUserId(int userId);
+
+    List<Appointment> getAppointmentByPsyId(int psyId);
 
     Appointment getAppointmentById(int id);
 

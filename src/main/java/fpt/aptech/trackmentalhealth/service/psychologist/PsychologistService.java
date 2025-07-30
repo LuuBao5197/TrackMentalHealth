@@ -8,4 +8,6 @@ public interface PsychologistService {
     List<Psychologist> getAllPsychologists();
 
     Psychologist getPsyById(int id);
+
+    Psychologist getPsychologistByUserId(int id);
 }

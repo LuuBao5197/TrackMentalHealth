@@ -49,6 +49,50 @@ public class LoginController {
 
     private MultipartFile avatar;
 
+    // === GỬI OTP ĐĂNG KÝ ===
+    private final Map<String, String> pendingOtps = new HashMap<>();
+    private final Map<String, LocalDateTime> otpExpiryMap = new HashMap<>();
+
+    @PostMapping("/send-otp-register")
+    public ResponseEntity<?> sendOtpForRegister(@RequestParam String email) {
+        if (loginRepository.findByEmail(email) != null) {
+            return ResponseEntity.status(400).body(Map.of("error", "Email already exists"));
+        }
+
+        String otp = generateOTP();
+        pendingOtps.put(email, otp);
+        otpExpiryMap.put(email, LocalDateTime.now().plusMinutes(5));
+
+        emailService.sendOtpEmail(email, otp);
+
+        return ResponseEntity.ok(Map.of("message", "OTP sent to email"));
+    }
+
+    @PostMapping("/verify-otp-register")
+    public ResponseEntity<?> verifyOtpForRegister(@RequestParam String email, @RequestParam String otp) {
+        System.out.println("Verify OTP for email: " + email);
+        System.out.println("Stored OTP: " + pendingOtps.get(email));
+        System.out.println("Stored Expiry: " + otpExpiryMap.get(email));
+        System.out.println("Now: " + LocalDateTime.now());
+
+        if (!pendingOtps.containsKey(email)) {
+            return ResponseEntity.status(400).body(Map.of("error", "OTP not found"));
+        }
+
+        if (!pendingOtps.get(email).equals(String.valueOf(otp))) {
+            return ResponseEntity.status(400).body(Map.of("error", "Invalid OTP"));
+        }
+
+        if (otpExpiryMap.get(email).isBefore(LocalDateTime.now())) {
+            return ResponseEntity.status(400).body(Map.of("error", "OTP has expired"));
+        }
+
+        pendingOtps.remove(email);
+        otpExpiryMap.remove(email);
+
+        return ResponseEntity.ok(Map.of("message", "OTP verified successfully"));
+    }
+
     // === REGISTER ===
     @PostMapping(value = "/register", consumes = {"multipart/form-data"})
     public ResponseEntity<?> register(@ModelAttribute RegisterUserRequestDTO request) {

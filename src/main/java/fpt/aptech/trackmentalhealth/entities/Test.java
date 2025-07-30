@@ -1,12 +1,13 @@
 package fpt.aptech.trackmentalhealth.entities;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
@@ -19,7 +20,7 @@ public class Test {
     private Integer id;
 
     @Size(max = 255)
-    @Column(name = "title")
+    @Column(name = "title", unique = true)
     private String title;
 
     @Lob
@@ -39,10 +40,11 @@ public class Test {
     @Column(name = "status")
     private String status = "not_submitted";
 
-/*
- TODO [Reverse Engineering] create field to map the 'updated_at' column
- Available actions: Define target Java type | Uncomment as is | Remove column mapping
-    @Column(name = "updated_at", columnDefinition = "timestamp not null")
-    private Object updatedAt;
-*/
+    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<TestQuestion> questions;
+
+    @OneToMany(mappedBy = "test", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonManagedReference
+    private List<TestResult> results;
 }

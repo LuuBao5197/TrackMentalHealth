@@ -22,5 +22,11 @@ public class PsychologistServiceImp implements PsychologistService{
         return psychologistRepository.getPsychologistById(id);
     }
 
+    @Override
+    public Psychologist getPsychologistByUserId(int id) {
+        return psychologistRepository.getPsychologistByUserId(id);
+    }
+
+
 
 }
