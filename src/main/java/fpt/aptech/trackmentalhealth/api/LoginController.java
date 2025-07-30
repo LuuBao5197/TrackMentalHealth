@@ -109,7 +109,7 @@ public class LoginController {
             }
 
             // Role cần xét duyệt
-            boolean requiresApproval = roleId == 3 || roleId == 4 || roleId == 5;
+            boolean requiresApproval = roleId == 2 || roleId == 3 || roleId == 4;
 
             // Nếu cần duyệt thì lưu vào PendingUserRegistration
             if (requiresApproval) {
@@ -123,6 +123,7 @@ public class LoginController {
                 PendingUserRegistration pending = new PendingUserRegistration();
                 pending.setEmail(request.getEmail());
                 pending.setPassword(passwordEncoder.encode(request.getPassword()));
+                pending.setConfirmPassword(passwordEncoder.encode(request.getConfirmPassword()));
                 pending.setFullName(request.getFullName());
                 pending.setRoleId(roleId);
                 pending.setSubmittedAt(LocalDateTime.now());
@@ -146,6 +147,7 @@ public class LoginController {
             // Nếu không cần duyệt (ví dụ: USER) thì lưu trực tiếp vào Users
             Users user = new Users();
             user.setEmail(request.getEmail());
+            user.setConfirmPassword(request.getConfirmPassword());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setUsername(request.getFullName());
             user.setFullname(request.getFullName());
@@ -294,6 +296,10 @@ public class LoginController {
 
             // Nếu có file avatar mới
             if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                //Xóa ảnh cũ trên cloud
+                if(user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+                    cloudinaryService.deleteFile(user.getAvatar());
+                }
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 user.setAvatar(avatarUrl);
             }

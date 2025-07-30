@@ -2,6 +2,8 @@ package fpt.aptech.trackmentalhealth.service.mood;
 
 import fpt.aptech.trackmentalhealth.entities.Mood;
 import fpt.aptech.trackmentalhealth.repository.mood.MoodRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -45,5 +47,11 @@ public class MoodServiceImp implements MoodService {
     public List<Mood> findByUserIdAndDate(Integer userId, LocalDate date) {
         return moodRepository.findByUsersIdAndDate(userId, date);
     }
+
+    @Override
+    public Page<Mood> findByUserIdPaged(Integer userId, Pageable pageable) {
+        return moodRepository.findByUsersId(userId, pageable);
+    }
+
 
 }
