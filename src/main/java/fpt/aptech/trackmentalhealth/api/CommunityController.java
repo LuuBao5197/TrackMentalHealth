@@ -22,6 +22,7 @@ import java.time.LocalDate;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/community")
@@ -40,7 +41,10 @@ public class CommunityController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "5") int size
     ) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createAt").descending());
+        Pageable pageable = PageRequest.of(page, size
+                ,Sort.by(Sort.Order.desc("createAt"), Sort.Order.desc("id"))
+//                , Sort.by("createAt").descending()
+        );
         Page<CommunityPost> posts = communityService.getAllCommunityPosts(pageable);
         Page<CommunityPostDTO> dtoPage = posts.map(CommunityPostDTO::new);
         return ResponseEntity.ok(dtoPage);
@@ -75,6 +79,7 @@ public class CommunityController {
         post.setIsAnonymous(isAnonymous);
         post.setUser(user);
         post.setCreateAt(LocalDate.now());
+        post.setStatus("approved");
 
         Set<CommunityPostMedia> mediaList = new LinkedHashSet<>();
         if (images != null) {
@@ -98,7 +103,8 @@ public class CommunityController {
             @RequestParam("content") String content,
             @RequestParam("isAnonymous") boolean isAnonymous,
             @RequestParam("userId") Integer userId,
-            @RequestParam(value = "images", required = false) List<MultipartFile> images
+            @RequestParam(value = "images", required = false) List<MultipartFile> images,
+            @RequestParam(value = "oldUrlsToKeep", required = false) List<String> oldUrlsToKeep
     ) throws IOException {
 
         CommunityPost existingPost = communityService.getCommunityPostsByID(id);
@@ -106,35 +112,47 @@ public class CommunityController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        if (images != null && !images.isEmpty()) {
-            for (CommunityPostMedia oldMedia : existingPost.getMediaList()) {
-                cloudinaryService.deleteFile(oldMedia.getMediaUrl());
-            }
-            existingPost.getMediaList().clear();
+        Set<CommunityPostMedia> currentMedia = existingPost.getMediaList();
 
-            Set<CommunityPostMedia> newMediaList = new LinkedHashSet<>();
-            for (MultipartFile image : images) {
-                String url = cloudinaryService.uploadFile(image);
-                CommunityPostMedia media = new CommunityPostMedia();
-                media.setMediaUrl(url);
-                media.setPost(existingPost);
-                newMediaList.add(media);
-            }
-            existingPost.setMediaList(newMediaList);
+        // B1: Xác định ảnh cần xóa
+        Set<CommunityPostMedia> mediasToRemove = currentMedia.stream()
+                .filter(media -> oldUrlsToKeep == null || !oldUrlsToKeep.contains(media.getMediaUrl()))
+                .collect(Collectors.toSet());
+
+        // B2: Xóa ảnh trên Cloudinary và xóa khỏi mediaList
+        for (CommunityPostMedia media : mediasToRemove) {
+            cloudinaryService.deleteFile(media.getMediaUrl());
+            currentMedia.remove(media);
         }
 
+        // B3: Upload ảnh mới nếu có
+        if (images != null && !images.isEmpty()) {
+            for (MultipartFile image : images) {
+                String url = cloudinaryService.uploadFile(image);
+                CommunityPostMedia newMedia = new CommunityPostMedia();
+                newMedia.setMediaUrl(url);
+                newMedia.setPost(existingPost);
+                currentMedia.add(newMedia);
+            }
+        }
+
+        // B4: Cập nhật nội dung bài viết
         existingPost.setContent(content);
         existingPost.setIsAnonymous(isAnonymous);
         communityService.saveCommunityPost(existingPost);
+
         return ResponseEntity.ok(existingPost);
     }
 
 
+    // Ky thuat xoa mem cho ko xoa cung trong database
     @DeleteMapping("/post/{id}")
     public ResponseEntity<CommunityPost> deletePost(@PathVariable Long id) {
         CommunityPost communityPost = communityService.getCommunityPostsByID(id);
         if (communityPost != null) {
-            communityService.deleteCommunityPost(id);
+            communityPost.setIsDeleted(true);
+            communityPost.setDeletedAt(LocalDate.now());
+            communityService.saveCommunityPost(communityPost);
             return ResponseEntity.ok().body(communityPost);
         } else
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
@@ -172,7 +190,7 @@ public class CommunityController {
         if (existingComment == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
         }
-        communityService.deleteCommunityPost(id);
+        communityService.deletePostComment(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).body(null);
     }
 
