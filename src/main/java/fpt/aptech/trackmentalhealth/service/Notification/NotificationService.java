@@ -1,12 +1,9 @@
 package fpt.aptech.trackmentalhealth.service.Notification;
 
 import fpt.aptech.trackmentalhealth.entities.Notification;
-import fpt.aptech.trackmentalhealth.repository.notification.NotificationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
+import fpt.aptech.trackmentalhealth.entities.Users;
 
 import java.util.List;
-
 
 public interface NotificationService {
     List<Notification> getNotificationsByUserId(int userId);
@@ -15,8 +12,10 @@ public interface NotificationService {
 
     Notification createNotification(Notification notification);
 
+    // Thêm method mới
+    Notification createNotification(Users user, String message);
+
     void deleteNotification(int id);
 
     void changeStatus(int id);
-
 }
