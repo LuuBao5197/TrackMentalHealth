@@ -17,7 +17,7 @@ public class ChatHistory {
     @JoinColumn(name = "user_id")
     private Users user;
     private String role;
-    @Column(name = "message", length = 255, columnDefinition = "nvarchar(255)")
+    @Column(name = "message", columnDefinition = "NVARCHAR(MAX)")
     private String message;
     private LocalDateTime timestamp;
 
