@@ -12,4 +12,7 @@ public interface PsychologistRepository extends JpaRepository<Psychologist, Inte
 
     @Query("select p from Psychologist p where p.id=:id")
     Psychologist getPsychologistById(int id);
+
+    @Query("select p from Psychologist p where p.usersID.id=:id")
+    Psychologist getPsychologistByUserId(int id);
 }

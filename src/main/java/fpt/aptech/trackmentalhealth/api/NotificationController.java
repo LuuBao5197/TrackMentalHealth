@@ -56,4 +56,8 @@ public class NotificationController {
         notificationService.changeStatus(id);
     }
 
+    @DeleteMapping("/delete/{id}")
+    public void deleteNotificationById(@PathVariable int id){
+        notificationService.deleteNotification(id);
+    }
 }

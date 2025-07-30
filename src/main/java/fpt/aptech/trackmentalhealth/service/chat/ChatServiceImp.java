@@ -1,13 +1,11 @@
 package fpt.aptech.trackmentalhealth.service.chat;
 
-import fpt.aptech.trackmentalhealth.entities.ChatGroup;
-import fpt.aptech.trackmentalhealth.entities.ChatMessage;
-import fpt.aptech.trackmentalhealth.entities.ChatMessageGroup;
-import fpt.aptech.trackmentalhealth.entities.ChatSession;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.chat.ChatGroupRepository;
 import fpt.aptech.trackmentalhealth.repository.chat.ChatMessageGroupRepository;
 import fpt.aptech.trackmentalhealth.repository.chat.ChatMessagesRepository;
 import fpt.aptech.trackmentalhealth.repository.chat.ChatSessionRepository;
+import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -31,6 +29,9 @@ public class ChatServiceImp implements ChatService {
     @Autowired
     ChatMessageGroupRepository chatMessageGroupRepository;
 
+    @Autowired
+    UserRepository userRepository;
+
     @Override
     public ChatSession getChatSessionById(int id) {
         return chatSessionRepository.getChatSessionById(id);
@@ -52,6 +53,11 @@ public class ChatServiceImp implements ChatService {
     @Override
     public List<ChatSession> getChatSessionByUserId(int id) {
         return chatSessionRepository.getChatSessionByUserId(id);
+    }
+
+    @Override
+    public ChatSession createChatSession(ChatSession chatSession) {
+        return chatSessionRepository.save(chatSession);
     }
 
     @Override
@@ -118,5 +124,16 @@ public class ChatServiceImp implements ChatService {
     public ChatMessageGroup saveMessageToGroup(ChatMessageGroup message) {
         return chatMessageGroupRepository.save(message);
     }
+
+    @Override
+    public List<Users> findUserByGroupId(int groupId, int currentUserId) {
+        return chatGroupRepository.findUsersByGroupId(groupId, currentUserId);
+    }
+
+    @Override
+    public Users findUserById(int id) {
+        return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
 
 }
