@@ -123,6 +123,7 @@ public class LoginController {
                 PendingUserRegistration pending = new PendingUserRegistration();
                 pending.setEmail(request.getEmail());
                 pending.setPassword(passwordEncoder.encode(request.getPassword()));
+                pending.setConfirmPassword(passwordEncoder.encode(request.getConfirmPassword()));
                 pending.setFullName(request.getFullName());
                 pending.setRoleId(roleId);
                 pending.setSubmittedAt(LocalDateTime.now());
@@ -146,6 +147,7 @@ public class LoginController {
             // Nếu không cần duyệt (ví dụ: USER) thì lưu trực tiếp vào Users
             Users user = new Users();
             user.setEmail(request.getEmail());
+            user.setConfirmPassword(request.getConfirmPassword());
             user.setPassword(passwordEncoder.encode(request.getPassword()));
             user.setUsername(request.getFullName());
             user.setFullname(request.getFullName());

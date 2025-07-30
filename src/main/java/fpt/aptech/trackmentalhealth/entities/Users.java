@@ -43,6 +43,11 @@ public class Users {
 
     @Size(max = 255)
     @Nationalized
+    @Column(name = "confirmPassword")
+    private String confirmPassword;
+
+    @Size(max = 255)
+    @Nationalized
     @Email(message = "Email is invalid")
     @Column(name = "email")
     private String email;
