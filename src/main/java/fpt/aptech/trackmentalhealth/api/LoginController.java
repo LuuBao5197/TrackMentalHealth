@@ -109,7 +109,7 @@ public class LoginController {
             }
 
             // Role cần xét duyệt
-            boolean requiresApproval = roleId == 3 || roleId == 4 || roleId == 5;
+            boolean requiresApproval = roleId == 2 || roleId == 3 || roleId == 4;
 
             // Nếu cần duyệt thì lưu vào PendingUserRegistration
             if (requiresApproval) {
@@ -294,6 +294,10 @@ public class LoginController {
 
             // Nếu có file avatar mới
             if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+                //Xóa ảnh cũ trên cloud
+                if(user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+                    cloudinaryService.deleteFile(user.getAvatar());
+                }
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 user.setAvatar(avatarUrl);
             }
