@@ -18,6 +18,7 @@ public class PendingUserRegistration {
 
     private String email;
     private String password;
+    private String confirmPassword;
     private String fullName;
     private Integer roleId;
     private String avatar;

@@ -7,6 +7,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class RegisterUserRequestDTO {
     private String email;
     private String password;
+    private String confirmPassword;
     private String fullName;
     private Integer roleId;
     private MultipartFile[] certificates;
