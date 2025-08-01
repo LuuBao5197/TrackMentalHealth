@@ -1,0 +1,41 @@
+package fpt.aptech.trackmentalhealth.entities;
+
+import jakarta.persistence.*;
+import lombok.Getter;
+import lombok.Setter;
+import java.util.*;
+
+@Entity
+@Getter
+@Setter
+public class Quiz {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Integer id;
+
+    private String title;
+    private String description;
+    private Integer totalScore;
+    private Integer timeLimit;
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
+    private List<Question> questions;
+}
+
+
+
+
+
+
+
+// ============================ DTO ============================
+
+
+// ============================ REPOSITORIES ============================
+
+
+
+
+
+
+// ============================ SERVICE ============================
