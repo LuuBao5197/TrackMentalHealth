@@ -12,9 +12,10 @@ import java.time.Instant;
 @Table(
         name = "user_lesson_progress",
         uniqueConstraints = {
-                @UniqueConstraint(columnNames = {"step_completed"})
+                @UniqueConstraint(columnNames = {"user_id", "lesson_id", "step_completed"})
         }
 )
+
 public class UserLessonProgress {
 
     @Id
