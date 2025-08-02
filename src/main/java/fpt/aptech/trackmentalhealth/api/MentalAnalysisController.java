@@ -78,7 +78,7 @@ public class MentalAnalysisController {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", apiKey);
+            headers.set("Authorization","Bearer " + apiKey);
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");

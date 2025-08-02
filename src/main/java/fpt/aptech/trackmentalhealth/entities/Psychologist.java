@@ -16,7 +16,7 @@ public class Psychologist {
     @Nationalized
     @Column(name = "id", nullable = false)
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    private Integer id;
 
     @Size(max = 255)
     @Nationalized

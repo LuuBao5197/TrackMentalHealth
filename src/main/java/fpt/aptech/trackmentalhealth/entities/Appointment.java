@@ -10,11 +10,10 @@ import java.time.LocalDateTime;
 @Data
 public class Appointment {
 
-    // mquan them 1 entities quan ly lich hen cua Psycho va user
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
-    private int id;
+    private Integer id;
 
     @Column(name = "time_start")
     private LocalDateTime timeStart ;
