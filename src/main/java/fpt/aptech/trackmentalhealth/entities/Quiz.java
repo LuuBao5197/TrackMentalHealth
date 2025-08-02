@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.entities;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
 import java.util.*;
 
 @Entity
@@ -18,24 +19,9 @@ public class Quiz {
     private Integer totalScore;
     private Integer timeLimit;
 
-    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL)
-    private List<Question> questions;
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizQuestion> quizQuestions = new ArrayList<>();
+
+    @OneToMany(mappedBy = "quiz", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<QuizResult> quizResults = new ArrayList<>();
 }
-
-
-
-
-
-
-
-// ============================ DTO ============================
-
-
-// ============================ REPOSITORIES ============================
-
-
-
-
-
-
-// ============================ SERVICE ============================

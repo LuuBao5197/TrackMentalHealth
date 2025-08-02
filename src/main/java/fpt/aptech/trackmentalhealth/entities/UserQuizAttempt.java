@@ -27,6 +27,7 @@ public class UserQuizAttempt {
     private LocalDateTime startTime;
     private LocalDateTime endTime;
     private Integer totalScore;
+    private String resultLabel; // nhãn kết quả theo QuizResult (ví dụ: "Bạn là người hướng nội
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserQuizAnswerItem> answerItems  = new ArrayList<>();
