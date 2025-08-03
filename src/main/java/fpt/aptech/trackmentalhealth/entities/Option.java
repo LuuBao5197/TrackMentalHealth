@@ -14,7 +14,8 @@ public class Option {
     private Integer id;
 
     private String content;
-    private boolean isCorrect;
+    @Column(name = "is_correct")
+    private boolean correct;
     private Integer score;
     @ManyToOne
     @JoinColumn(name = "question_id")

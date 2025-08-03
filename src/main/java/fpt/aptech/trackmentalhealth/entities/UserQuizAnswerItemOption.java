@@ -7,7 +7,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-public class    UserQuizAnswerItemOption {
+public class UserQuizAnswerItemOption {
 
     @EmbeddedId
     private UserQuizAnswerItemOptionId id = new UserQuizAnswerItemOptionId();

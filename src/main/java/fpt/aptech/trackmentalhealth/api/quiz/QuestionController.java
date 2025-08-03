@@ -3,6 +3,7 @@ package fpt.aptech.trackmentalhealth.api.quiz;
 import fpt.aptech.trackmentalhealth.entities.Question;
 import fpt.aptech.trackmentalhealth.service.quiz.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,8 +16,14 @@ public class QuestionController {
     private QuestionService questionService;
 
     @PostMapping
-    public ResponseEntity<Question> create(@RequestBody Question question) {
-        return ResponseEntity.ok(questionService.createQuestion(question));
+    public ResponseEntity<?> create(@RequestBody Question question) {
+        Question newQuestion = questionService.createQuestion(question);
+        if (newQuestion != null) {
+            return ResponseEntity.ok(newQuestion);
+        } else {
+            return ResponseEntity.badRequest().body("Question must have at least one option");
+        }
+
     }
 
     @GetMapping

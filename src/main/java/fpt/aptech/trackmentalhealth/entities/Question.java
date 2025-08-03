@@ -16,7 +16,7 @@ public class Question {
     private Integer id;
 
     private String content;
-    private String type; // MULTI_CHOICE, TEXT_INPUT, NUMBER_INPUT
+    private String type; // MULTI_CHOICE, TEXT_INPUT, NUMBER_INPUT, SCORE_BASED
     private Integer score;
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)

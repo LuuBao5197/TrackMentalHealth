@@ -35,9 +35,10 @@ public class UserQuizAttemptServiceImpl implements UserQuizAttemptService {
         attempt.setUser(user);
         attempt.setQuiz(quiz);
         attempt.setStartTime(LocalDateTime.now()); // You can pass start time in request if needed
-
+        attempt.setTotalScore(0);
         List<UserQuizAnswerItem> answerItems = new ArrayList<>();
         int totalScore = 0;
+        attempt = attemptRepository.save(attempt);
 
         for (SubmitQuizRequest.QuestionAnswerDto answerDto : request.getAnswers()) {
             Question question = questionRepository.findById(answerDto.getQuestionId())
@@ -92,6 +93,7 @@ public class UserQuizAttemptServiceImpl implements UserQuizAttemptService {
 
         // Optional: set label based on score and quiz result scale
         attempt.setResultLabel(calculateResultLabel(totalScore, quiz));
+
 
         return attemptRepository.save(attempt);
     }

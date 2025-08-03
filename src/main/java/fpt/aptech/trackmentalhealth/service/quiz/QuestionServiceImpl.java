@@ -14,6 +14,12 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public Question createQuestion(Question question) {
+        // Gán lại quan hệ cho từng Option
+        if (question.getOptions() != null) {
+            question.getOptions().forEach(option -> option.setQuestion(question));
+        } else {
+            return null;
+        }
         return questionRepository.save(question);
     }
 
