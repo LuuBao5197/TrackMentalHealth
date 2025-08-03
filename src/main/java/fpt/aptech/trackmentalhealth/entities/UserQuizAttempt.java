@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 @Entity
@@ -12,20 +14,21 @@ import java.util.List;
 public class UserQuizAttempt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
-    private Long userId; // Hoặc dùng @ManyToOne nếu có entity User
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private Users user;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
     private LocalDateTime startTime;
-
     private LocalDateTime endTime;
-
-    private Double totalScore;
+    private Integer totalScore;
+    private String resultLabel; // nhãn kết quả theo QuizResult (ví dụ: "Bạn là người hướng nội
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<UserQuizAnswer> answers;
+    private List<UserQuizAnswerItem> answerItems  = new ArrayList<>();
 }
