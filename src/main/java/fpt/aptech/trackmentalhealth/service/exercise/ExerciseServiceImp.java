@@ -43,6 +43,9 @@ public class ExerciseServiceImp implements ExerciseService {
         if (exercise.getTitle() != null && contentModerationService.isSensitiveContent(exercise.getTitle())) {
             throw new RuntimeException("Exercise title contains sensitive content.");
         }
+        if (exercise.getInstruction() != null && contentModerationService.isSensitiveContent(exercise.getInstruction())) {
+            throw new RuntimeException("Exercise instruction contains sensitive content.");
+        }
 
 
         Exercise savedExercise = exerciseRepository.save(exercise);

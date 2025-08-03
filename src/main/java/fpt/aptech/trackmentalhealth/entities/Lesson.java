@@ -49,6 +49,12 @@ public class Lesson {
     @Column(name = "updated_at")
     private Instant updatedAt;
 
+    @Size(max = 100)
+    @Nationalized
+    @Column(name = "category", length = 100)
+    private String category;
+
+
     @OneToMany(mappedBy = "lesson")
     private Set<LessonStep> lessonSteps = new LinkedHashSet<>();
 

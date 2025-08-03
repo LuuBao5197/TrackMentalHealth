@@ -62,8 +62,8 @@ public class ExerciseController {
 
             ExerciseDTO created = exerciseService.createExerciseDTO(exercise);
             return ResponseEntity.status(HttpStatus.CREATED).body(created);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error creating exercise: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
@@ -90,8 +90,8 @@ public class ExerciseController {
 
             ExerciseDTO updated = exerciseService.updateExerciseDTO(id, exercise);
             return ResponseEntity.ok(updated);
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Error updating exercise: " + e.getMessage());
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
