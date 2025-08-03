@@ -43,6 +43,8 @@ public class LessonService {
             dto.setPhoto(lesson.getPhoto());
             dto.setCreatedAt(lesson.getCreatedAt());
             dto.setUpdatedAt(lesson.getUpdatedAt());
+            dto.setCategory(lesson.getCategory());
+
             dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
 
             List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
@@ -94,6 +96,7 @@ public class LessonService {
         lesson.setPhoto(dto.getPhoto());
         lesson.setCreatedAt(dto.getCreatedAt());
         lesson.setUpdatedAt(dto.getUpdatedAt());
+        lesson.setCategory(dto.getCategory());
 
         if (dto.getCreatedBy() != null) {
             ContentCreator creator = contentCreatorRepository.findById(dto.getCreatedBy())
@@ -136,6 +139,8 @@ public class LessonService {
         dto.setPhoto(lesson.getPhoto());
         dto.setCreatedAt(lesson.getCreatedAt());
         dto.setUpdatedAt(lesson.getUpdatedAt());
+        dto.setCategory(lesson.getCategory());
+
         dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
 
         List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
@@ -201,6 +206,7 @@ public class LessonService {
             dto.setPhoto(lesson.getPhoto());
             dto.setCreatedAt(lesson.getCreatedAt());
             dto.setUpdatedAt(lesson.getUpdatedAt());
+            dto.setCategory(lesson.getCategory());
             dto.setCreatedBy(lesson.getCreatedBy() != null ? lesson.getCreatedBy().getId() : null);
 
             List<LessonStepDto> steps = lesson.getLessonSteps().stream().map(step -> {
