@@ -13,5 +13,5 @@ public interface TestRepository extends JpaRepository<Test, Integer> {
     )
     Test findByTitleIgnoreCase(@Param("title") String title);
     @Query("SELECT t FROM Test t WHERE LOWER(t.title) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    Page<Test> searchTests(@Param("keyword") String keyword, Pageable pageable);
+    Page<Test> searchQuiz(@Param("keyword") String keyword, Pageable pageable);
 }

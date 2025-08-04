@@ -9,6 +9,8 @@ import fpt.aptech.trackmentalhealth.repository.quiz.QuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizQuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -25,7 +27,17 @@ public class QuizServiceImpl implements QuizService {
     private QuizQuestionRepository quizQuestionRepository;
 
     @Override
+    public Page<Quiz> findAll(Pageable pageable) {
+        return quizRepository.findAll(pageable);
+    }
+
+    @Override
     public Quiz createQuiz(Quiz quiz) {
+        if(quiz.getQuizQuestions() != null) {
+            quiz.getQuizQuestions().forEach(question -> question.setQuiz(quiz));
+        } else {
+            return null;
+        }
         return quizRepository.save(quiz);
     }
 
@@ -43,5 +55,10 @@ public class QuizServiceImpl implements QuizService {
         }
 
         return quiz;
+    }
+
+    @Override
+    public Page<Quiz> searchQuizzes(String keyword, Pageable pageable) {
+        return quizRepository.searchQuiz(keyword, pageable);
     }
 }
