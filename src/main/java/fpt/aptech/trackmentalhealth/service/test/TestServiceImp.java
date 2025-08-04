@@ -278,7 +278,7 @@ public class TestServiceImp implements TestService {
 
     @Override
     public Page<Test> searchTests(String keyword, Pageable pageable) {
-        return testRepository.searchTests(keyword, pageable);
+        return testRepository.searchQuiz(keyword, pageable);
     }
 
     @Override
