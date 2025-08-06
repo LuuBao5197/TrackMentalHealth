@@ -52,4 +52,15 @@ public class ChatController {
         chatService.changeStatusIsRead(sessionId, receiverId);
     }
 
+    //check unread
+    @GetMapping("/has-unread/{receiverId}")
+    public boolean hasUnreadMessages(@PathVariable int receiverId) {
+        return chatService.hasUnreadMessages(receiverId);
+    }
+
+    @GetMapping("/lastest-message/{sessionId}")
+    public ChatMessage getLastestMessageBySessionId(@PathVariable int sessionId){
+        return chatService.getLatestMessage(sessionId);
+    }
+
 }

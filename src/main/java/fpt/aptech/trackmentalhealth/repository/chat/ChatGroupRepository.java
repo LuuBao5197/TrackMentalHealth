@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.repository.chat;
 
 import fpt.aptech.trackmentalhealth.entities.ChatGroup;
+import fpt.aptech.trackmentalhealth.entities.ChatMessageGroup;
 import fpt.aptech.trackmentalhealth.entities.ChatSession;
 import fpt.aptech.trackmentalhealth.entities.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -23,4 +24,13 @@ public interface ChatGroupRepository extends JpaRepository<ChatGroup, Integer> {
             "WHERE m.group.id = :groupId AND m.sender.id <> :currentUserId")
     List<Users> findUsersByGroupId(@Param("groupId") int groupId,
                                    @Param("currentUserId") int currentUserId);
+
+    @Query(value = """
+                SELECT TOP 1 * 
+                FROM chat_message_group m 
+                WHERE m.group_id = :groupId 
+                ORDER BY m.timestamp DESC
+            """, nativeQuery = true)
+    ChatMessageGroup findLatestMessageByGroupId(@Param("groupId") int groupId);
+
 }
