@@ -1,18 +1,22 @@
 package fpt.aptech.trackmentalhealth.service.quiz;
 
 
-import fpt.aptech.trackmentalhealth.entities.Question;
-import fpt.aptech.trackmentalhealth.entities.Quiz;
-import fpt.aptech.trackmentalhealth.entities.QuizQuestion;
-import fpt.aptech.trackmentalhealth.entities.QuizQuestionId;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuestionDTO;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizDTO;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizDetailDTO;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizResultDTO;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizQuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizRepository;
+import fpt.aptech.trackmentalhealth.ultis.ConvertDTOtoEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -27,8 +31,42 @@ public class QuizServiceImpl implements QuizService {
     private QuizQuestionRepository quizQuestionRepository;
 
     @Override
-    public Page<Quiz> findAll(Pageable pageable) {
-        return quizRepository.findAll(pageable);
+    public Page<QuizDTO> findAll(Pageable pageable) {
+        Page<Quiz> quizzes = quizRepository.findAll(pageable);
+        List<Quiz> quizzesList = quizzes.getContent();
+        List<QuizDTO> quizDTOList = new ArrayList<>();
+        for (Quiz quiz : quizzesList) {
+            QuizDTO quizDTO = new QuizDTO();
+            quizDTO.setId(quiz.getId());
+            quizDTO.setTitle(quiz.getTitle());
+            quizDTO.setDescription(quiz.getDescription());
+            quizDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
+            quizDTO.setTimeLimit(quiz.getTimeLimit());
+            quizDTO.setHasResults(quiz.getQuizResults() != null);
+            quizDTOList.add(quizDTO);
+        }
+        Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
+        return quizDTOPage;
+    }
+
+    @Override
+    public QuizDetailDTO findOne(Integer id) {
+        Quiz quiz = quizRepository.findById(id).orElse(null);
+        QuizDetailDTO quizDetailDTO = new QuizDetailDTO();
+        quizDetailDTO.setId(quiz.getId());
+        quizDetailDTO.setTitle(quiz.getTitle());
+        quizDetailDTO.setDescription(quiz.getDescription());
+        quizDetailDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
+        quizDetailDTO.setTimeLimit(quiz.getTimeLimit());
+        quizDetailDTO.setQuizQuestions(getQuestionsFromQuiz(quiz.getId()));
+        List<QuizResult> quizzesList = quiz.getQuizResults();
+        List<QuizResultDTO> quizResultDTOList = new ArrayList<>();
+        for (QuizResult quizResult : quizzesList) {
+            QuizResultDTO quizResultDTO = new QuizResultDTO(quizResult);
+            quizResultDTOList.add(quizResultDTO);
+        }
+        quizDetailDTO.setQuizResults(quizResultDTOList);
+        return quizDetailDTO;
     }
 
     @Override
@@ -58,7 +96,37 @@ public class QuizServiceImpl implements QuizService {
     }
 
     @Override
-    public Page<Quiz> searchQuizzes(String keyword, Pageable pageable) {
-        return quizRepository.searchQuiz(keyword, pageable);
+    public Page<QuizDTO> searchQuizzes(String keyword, Pageable pageable) {
+        Page<Quiz> quizzes = quizRepository.searchQuiz(keyword, pageable);
+        List<Quiz> quizzesList = quizzes.getContent();
+        List<QuizDTO> quizDTOList = new ArrayList<>();
+        for (Quiz quiz : quizzesList) {
+            QuizDTO quizDTO = new QuizDTO();
+            quizDTO.setId(quiz.getId());
+            quizDTO.setTitle(quiz.getTitle());
+            quizDTO.setDescription(quiz.getDescription());
+            quizDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
+            quizDTO.setTimeLimit(quiz.getTimeLimit());
+            quizDTO.setHasResults(quiz.getQuizResults() != null);
+            quizDTOList.add(quizDTO);
+        }
+        Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
+        return quizDTOPage;
+    }
+
+    @Override
+    public List<QuestionDTO> getQuestionsFromQuiz(Integer quizId) {
+        List<Question> questionList = quizQuestionRepository.getAllQuestionOfQuiz(quizId);
+        List<QuestionDTO> questionDTOList = new ArrayList<>();
+        for (Question question : questionList) {
+            QuestionDTO questionDTO = new QuestionDTO();
+            questionDTO.setId(question.getId());
+            questionDTO.setType(question.getType());
+            questionDTO.setTopicName(question.getTopic().getName());
+            questionDTO.setContent(question.getContent());
+            questionDTO.setOptions(ConvertDTOtoEntity.convertOptionsToOptionDTO(question.getOptions()));
+            questionDTOList.add(questionDTO);
+        }
+        return questionDTOList;
     }
 }

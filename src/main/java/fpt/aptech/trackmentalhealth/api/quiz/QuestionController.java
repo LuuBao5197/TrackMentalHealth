@@ -56,6 +56,7 @@ public class QuestionController {
             newOption.setContent(optionDTO.getContent());
             newOption.setCorrect(optionDTO.isCorrect());
             newOption.setQuestion(newQuestion); // Gán Question
+            newOption.setScore(optionDTO.getScore());
             optionRepository.save(newOption); // Lưu Option (cần có trong service)
         }
         newQuestion = questionService.createQuestion(newQuestion);

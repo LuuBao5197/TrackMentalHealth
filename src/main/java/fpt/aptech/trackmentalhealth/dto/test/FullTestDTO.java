@@ -10,4 +10,5 @@ public class FullTestDTO {
     private String description;
     private String instructions;
     private List<QuestionDTO> questions;
+    private Boolean hasResult;
 }
