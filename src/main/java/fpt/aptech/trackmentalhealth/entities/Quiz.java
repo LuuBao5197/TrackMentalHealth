@@ -13,9 +13,9 @@ public class Quiz {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
     private String title;
     private String description;
+    private Integer numberOfQuestions;
     private Integer totalScore;
     private Integer timeLimit;
 

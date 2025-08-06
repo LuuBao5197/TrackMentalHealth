@@ -7,7 +7,7 @@ import java.util.List;
 public interface TopicService
 {
     public List<Topic> getTopic();
-    public Topic getTopicById(int id);
+    public Topic getTopicById(Integer id);
     public Topic saveTopic(Topic topic);
     public Topic updateTopic(Topic topic);
     public Boolean deleteTopic(int id);

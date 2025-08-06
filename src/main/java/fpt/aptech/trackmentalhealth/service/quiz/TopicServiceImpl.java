@@ -17,7 +17,7 @@ public class TopicServiceImpl implements TopicService {
     }
 
     @Override
-    public Topic getTopicById(int id) {
+    public Topic getTopicById(Integer id) {
         return topicRepository.findById(id).orElse(null);
     }
 

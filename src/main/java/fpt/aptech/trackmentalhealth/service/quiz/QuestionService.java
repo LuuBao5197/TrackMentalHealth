@@ -11,4 +11,5 @@ public interface QuestionService {
     Question createQuestion(Question question);
     Page<QuestionDTO> getAllQuestions(String keyword, Integer topicId, String type, Pageable pageable);
     Question getQuestionById(Integer id);
+    Integer getMaxScoreOfQuestion(Integer id);
 }

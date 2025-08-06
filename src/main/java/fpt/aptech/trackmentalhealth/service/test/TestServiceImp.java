@@ -6,14 +6,12 @@ import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -37,8 +35,37 @@ public class TestServiceImp implements TestService {
     }
 
     @Override
-    public Page<Test> getTests(Pageable pageable) {
-        return testRepository.findAll(pageable);
+    public Page<FullTestDTO> getTests(Pageable pageable) {
+        Page<Test> testPage = testRepository.findAll(pageable);
+        List<Test> testsList = testPage.getContent();
+        List<FullTestDTO> fullTestDTOList = new ArrayList<>();
+        for (Test test : testsList) {
+            FullTestDTO fullTestDTO = new FullTestDTO();
+            fullTestDTO.setId(Long.valueOf(test.getId()));
+            fullTestDTO.setTitle(test.getTitle());
+            fullTestDTO.setDescription(test.getDescription());
+            fullTestDTO.setInstructions(test.getInstructions());
+            fullTestDTOList.add(fullTestDTO);
+        }
+        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList);
+        return fullTestDTOPage;
+    }
+
+    @Override
+    public Page<FullTestDTO> searchTests(String keyword, Pageable pageable) {
+        Page<Test> testPage = testRepository.searchTestByName(keyword, pageable);
+        List<Test> testsList = testPage.getContent();
+        List<FullTestDTO> fullTestDTOList = new ArrayList<>();
+        for (Test test : testsList) {
+            FullTestDTO fullTestDTO = new FullTestDTO();
+            fullTestDTO.setId(Long.valueOf(test.getId()));
+            fullTestDTO.setTitle(test.getTitle());
+            fullTestDTO.setDescription(test.getDescription());
+            fullTestDTO.setInstructions(test.getInstructions());
+            fullTestDTOList.add(fullTestDTO);
+        }
+        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList);
+        return fullTestDTOPage;
     }
 
     @Override
@@ -276,10 +303,7 @@ public class TestServiceImp implements TestService {
         return testRepository.findByTitleIgnoreCase(title);
     }
 
-    @Override
-    public Page<Test> searchTests(String keyword, Pageable pageable) {
-        return testRepository.searchQuiz(keyword, pageable);
-    }
+
 
     @Override
     public Integer getMaxMarkOfTest(Integer id) {
