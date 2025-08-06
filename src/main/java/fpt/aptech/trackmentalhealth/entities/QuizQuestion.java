@@ -1,28 +1,30 @@
 package fpt.aptech.trackmentalhealth.entities;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
-
-import java.util.List;
+import lombok.*;
 
 @Entity
-@Getter @Setter
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "quiz_question")
 public class QuizQuestion {
 
     @EmbeddedId
     private QuizQuestionId id = new QuizQuestionId();
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("quizId")
     @JoinColumn(name = "quiz_id")
     private Quiz quiz;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("questionId")
     @JoinColumn(name = "question_id")
     private Question question;
 
-    private int displayOrder;
+    private Integer orderIndex; // Thứ tự hiển thị nếu muốn
 
+    // Các cờ phụ trợ khác nếu muốn: isRequired, note,...
 }
