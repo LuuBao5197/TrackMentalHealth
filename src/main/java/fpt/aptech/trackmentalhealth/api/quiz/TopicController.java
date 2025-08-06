@@ -1,5 +1,6 @@
 package fpt.aptech.trackmentalhealth.api.quiz;
 
+import fpt.aptech.trackmentalhealth.dto.quiz.TopicDTO;
 import fpt.aptech.trackmentalhealth.entities.Topic;
 import fpt.aptech.trackmentalhealth.service.quiz.TopicService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,9 +18,8 @@ public class TopicController {
     private TopicService topicService;
     
     @GetMapping
-    public ResponseEntity<List<Topic>> getAllTopics() {
-        List<Topic> topics = new ArrayList<>();
-        topics = topicService.getTopic();
+    public ResponseEntity<List<TopicDTO>> getAllTopics() {
+        List<TopicDTO> topics = topicService.getTopic();
         return new ResponseEntity<>(topics, HttpStatus.OK);
     }
     @PostMapping("/")

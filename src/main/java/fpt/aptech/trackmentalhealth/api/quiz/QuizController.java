@@ -2,10 +2,10 @@ package fpt.aptech.trackmentalhealth.api.quiz;
 
 import fpt.aptech.trackmentalhealth.dto.quiz.QuizCreateDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.QuizDTO;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizDetailDTO;
 import fpt.aptech.trackmentalhealth.entities.Question;
 import fpt.aptech.trackmentalhealth.entities.Quiz;
 import fpt.aptech.trackmentalhealth.entities.QuizQuestion;
-import fpt.aptech.trackmentalhealth.entities.TestResult;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizRepository;
 import fpt.aptech.trackmentalhealth.service.quiz.QuestionService;
 import fpt.aptech.trackmentalhealth.service.quiz.QuizService;
@@ -29,9 +29,6 @@ public class QuizController {
     private QuizService quizService;
     @Autowired
     private QuestionService questionService;
-    @Autowired
-    private QuizRepository quizRepository;
-
     @GetMapping
     public ResponseEntity<Map<String,Object>> findAll(
             @RequestParam(defaultValue = "1") int page,
@@ -52,6 +49,14 @@ public class QuizController {
         response.put("currentPage", quizzes.getNumber() + 1); // Page index starts at 0
         response.put("totalPages", quizzes.getTotalPages());
         return ResponseEntity.ok(response);
+    }
+    @GetMapping("/{id}")
+    public ResponseEntity<QuizDetailDTO> findOne(@PathVariable Integer id) {
+        QuizDetailDTO quiz = quizService.findOne(id);
+        if (quiz == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(quiz, HttpStatus.OK);
     }
 
     @PostMapping

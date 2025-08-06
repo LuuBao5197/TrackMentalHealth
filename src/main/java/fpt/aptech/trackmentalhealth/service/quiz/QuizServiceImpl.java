@@ -1,14 +1,15 @@
 package fpt.aptech.trackmentalhealth.service.quiz;
 
 
+import fpt.aptech.trackmentalhealth.dto.quiz.QuestionDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.QuizDTO;
-import fpt.aptech.trackmentalhealth.entities.Question;
-import fpt.aptech.trackmentalhealth.entities.Quiz;
-import fpt.aptech.trackmentalhealth.entities.QuizQuestion;
-import fpt.aptech.trackmentalhealth.entities.QuizQuestionId;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizDetailDTO;
+import fpt.aptech.trackmentalhealth.dto.quiz.QuizResultDTO;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizQuestionRepository;
 import fpt.aptech.trackmentalhealth.repository.quiz.QuizRepository;
+import fpt.aptech.trackmentalhealth.ultis.ConvertDTOtoEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -46,6 +47,26 @@ public class QuizServiceImpl implements QuizService {
         }
         Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
         return quizDTOPage;
+    }
+
+    @Override
+    public QuizDetailDTO findOne(Integer id) {
+        Quiz quiz = quizRepository.findById(id).orElse(null);
+        QuizDetailDTO quizDetailDTO = new QuizDetailDTO();
+        quizDetailDTO.setId(quiz.getId());
+        quizDetailDTO.setTitle(quiz.getTitle());
+        quizDetailDTO.setDescription(quiz.getDescription());
+        quizDetailDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
+        quizDetailDTO.setTimeLimit(quiz.getTimeLimit());
+        quizDetailDTO.setQuizQuestions(getQuestionsFromQuiz(quiz.getId()));
+        List<QuizResult> quizzesList = quiz.getQuizResults();
+        List<QuizResultDTO> quizResultDTOList = new ArrayList<>();
+        for (QuizResult quizResult : quizzesList) {
+            QuizResultDTO quizResultDTO = new QuizResultDTO(quizResult);
+            quizResultDTOList.add(quizResultDTO);
+        }
+        quizDetailDTO.setQuizResults(quizResultDTOList);
+        return quizDetailDTO;
     }
 
     @Override
@@ -91,5 +112,21 @@ public class QuizServiceImpl implements QuizService {
         }
         Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
         return quizDTOPage;
+    }
+
+    @Override
+    public List<QuestionDTO> getQuestionsFromQuiz(Integer quizId) {
+        List<Question> questionList = quizQuestionRepository.getAllQuestionOfQuiz(quizId);
+        List<QuestionDTO> questionDTOList = new ArrayList<>();
+        for (Question question : questionList) {
+            QuestionDTO questionDTO = new QuestionDTO();
+            questionDTO.setId(question.getId());
+            questionDTO.setType(question.getType());
+            questionDTO.setTopicName(question.getTopic().getName());
+            questionDTO.setContent(question.getContent());
+            questionDTO.setOptions(ConvertDTOtoEntity.convertOptionsToOptionDTO(question.getOptions()));
+            questionDTOList.add(questionDTO);
+        }
+        return questionDTOList;
     }
 }
