@@ -1,15 +1,18 @@
 package fpt.aptech.trackmentalhealth.repository.quiz;
 
+import fpt.aptech.trackmentalhealth.entities.Question;
 import fpt.aptech.trackmentalhealth.entities.QuizQuestion;
+import fpt.aptech.trackmentalhealth.entities.QuizQuestionId;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface QuizQuestionRepository extends JpaRepository<QuizQuestion, Integer> {
+public interface QuizQuestionRepository extends JpaRepository<QuizQuestion, QuizQuestionId> {
+    List<QuizQuestion> findByQuiz_Id(Integer quizId);
     @Query(
-            "Select q from QuizQuestion q where q.quiz.id =:quizId"
+            "Select qq.question from QuizQuestion qq where qq.quiz.id =:quizId"
     )
-    List<QuizQuestion> findByQuizId(@PathVariable  Integer quizId);
+    List<Question> getAllQuestionOfQuiz(@Param("quizId") Integer quizId);
 }

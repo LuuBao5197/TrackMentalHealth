@@ -14,12 +14,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.client.RestTemplate;
 
-
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @RestController
@@ -30,14 +26,16 @@ public class MentalAnalysisController {
     private final MoodService moodService;
     private final DiaryService diaryService;
     private final UserRepository userRepository;
+    private final TestRepository testRepository;
 
     @Value("${openai.api.key}")
     private String apiKey;
 
-    public MentalAnalysisController(MoodService moodService, DiaryService diaryService, UserRepository userRepository) {
+    public MentalAnalysisController(MoodService moodService, DiaryService diaryService, UserRepository userRepository, TestRepository testRepository) {
         this.moodService = moodService;
         this.diaryService = diaryService;
         this.userRepository = userRepository;
+        this.testRepository = testRepository;
     }
 
     @GetMapping("/analyze")
@@ -50,12 +48,12 @@ public class MentalAnalysisController {
 
         var moods = moodService.findByUserId(user.getId()).stream()
                 .filter(m -> m.getDate() != null && !m.getDate().isBefore(fourteenDaysAgo))
-                .sorted((a, b) -> b.getDate().compareTo(a.getDate()))
+                .sorted(Comparator.comparing(m -> m.getDate(), Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
         var diaries = diaryService.findByUserId(user.getId()).stream()
                 .filter(d -> d.getDate() != null && !d.getDate().isBefore(fourteenDaysAgo))
-                .sorted((a, b) -> b.getDate().compareTo(a.getDate()))
+                .sorted(Comparator.comparing(d -> d.getDate(), Comparator.reverseOrder()))
                 .collect(Collectors.toList());
 
         String moodSummary = moods.stream()
@@ -66,19 +64,44 @@ public class MentalAnalysisController {
                 .map(d -> d.getDate() + ": " + d.getContent())
                 .collect(Collectors.joining("\n"));
 
+        List<Test> allTests = testRepository.findAll();
+
+        String testDescriptions = allTests.stream()
+                .map(test -> "Tên: " + test.getTitle()
+                        + "\nMô tả: " + test.getDescription()
+                        + "\nHướng dẫn: " + test.getInstructions())
+                .collect(Collectors.joining("\n\n"));
+
         String prompt = "Dưới đây là cảm xúc và nhật ký của người dùng trong 14 ngày gần nhất:\n"
                 + "---Cảm xúc---\n" + moodSummary + "\n"
-                + "---Nhật ký---\n" + diarySummary + "\n"
-                + "Hãy phân tích và **chỉ trả lời nếu phát hiện dấu hiệu bất ổn về tinh thần**.\n"
-                + "Nếu có, **chỉ đưa ra cảnh báo ngắn gọn** (1 câu) và **gợi ý 1 bài tập cụ thể phù hợp**.\n"
-                + "Nếu không có dấu hiệu bất ổn, **không cần trả lời gì cả**.";
-
+                + "---Nhật ký---\n" + diarySummary + "\n\n"
+                + "---Danh sách các bài test tâm lý có sẵn---\n" + testDescriptions + "\n\n"
+                + "Hãy:\n"
+                + "1. Phân tích tình trạng tinh thần người dùng theo 4 mức độ:\n"
+                + "   - Level 1: Ổn định\n"
+                + "   - Level 2: Cảnh báo nhẹ\n"
+                + "   - Level 3: Cảnh báo vừa (lo âu, buồn bã kéo dài)\n"
+                + "   - Level 4: Nguy cơ cao (trầm cảm nghiêm trọng, tuyệt vọng...)\n"
+                + "2. Nếu Level = 3, chọn một bài test phù hợp từ danh sách trên và gợi ý.\n"
+                + "3. Nếu Level = 4, cảnh báo khẩn cấp và gợi ý liên hệ chuyên gia tâm lý hoặc bác sĩ. Không đề xuất bài test.\n"
+                + "4. Trả kết quả theo định dạng JSON như sau:\n"
+                + "{\n"
+                + "  \"level\": 3,\n"
+                + "  \"description\": \"...\",\n"
+                + "  \"suggestion\": {\n"
+                + "    \"type\": \"test\", // hoặc 'emergency'\n"
+                + "    \"testTitle\": \"...\",  // nếu là type=test\n"
+                + "    \"testDescription\": \"...\",\n"
+                + "    \"instructions\": \"...\"\n"
+                + "    // nếu type=emergency thì chỉ cần: \"message\": \"...\"\n"
+                + "  }\n"
+                + "}";
 
         try {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", apiKey);
+            headers.set("Authorization", "Bearer " + apiKey);
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
@@ -101,16 +124,42 @@ public class MentalAnalysisController {
                     Map choice = (Map) choices.get(0);
                     Map messageMap = (Map) choice.get("message");
                     String result = (String) messageMap.get("content");
-                    return ResponseEntity.ok(result);
+
+                    try {
+                        // Parse JSON từ chuỗi result
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        Map<String, Object> parsedResult = objectMapper.readValue(result, Map.class);
+
+                        // Nếu có gợi ý bài test thì tìm testId và thêm vào
+                        Map<String, Object> suggestion = (Map<String, Object>) parsedResult.get("suggestion");
+                        if (suggestion != null && "test".equals(suggestion.get("type"))) {
+                            String testTitle = (String) suggestion.get("testTitle");
+
+                            Optional<Test> matchedTest = allTests.stream()
+                                    .filter(t -> t.getTitle().equalsIgnoreCase(testTitle))
+                                    .findFirst();
+
+                            matchedTest.ifPresent(test -> suggestion.put("testId", test.getId()));
+                        }
+
+                        // Trả lại chuỗi JSON sau khi thêm testId
+                        String modifiedJson = objectMapper.writeValueAsString(parsedResult);
+                        return ResponseEntity.ok(modifiedJson);
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        // Nếu lỗi parse, vẫn trả về raw result
+                        return ResponseEntity.ok(result);
+                    }
                 }
             }
+
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return ResponseEntity.ok("Không thể phân tích lúc này.");
     }
-
 
     private Users getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

@@ -16,6 +16,7 @@ public class LessonDto {
     private String photo;
     private Instant createdAt;
     private Instant updatedAt;
+    private String category;
     private Integer createdBy; // ID của user tạo bài học
     private List<LessonStepDto> lessonSteps;
 }

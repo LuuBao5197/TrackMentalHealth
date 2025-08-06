@@ -95,7 +95,8 @@ public class MoodController {
             RestTemplate restTemplate = new RestTemplate();
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("Authorization", apiKey);
+            headers.set("Authorization", "Bearer " + apiKey); // <-- thêm khoảng trắng!
+
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
