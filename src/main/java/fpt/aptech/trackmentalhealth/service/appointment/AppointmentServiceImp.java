@@ -5,6 +5,7 @@ import fpt.aptech.trackmentalhealth.repository.appointment.AppointmentRepository
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @Service
@@ -54,6 +55,12 @@ public class AppointmentServiceImp implements AppointmentService{
     public boolean hasPendingAppointment(int userId, int psyId) {
         List<Appointment> existing = appointmentRepository.findPendingAppointmentByUserAndPsychologist(userId, psyId);
         return !existing.isEmpty();
+    }
+
+    @Override
+    public List<Appointment> getApprovedAppointmentsByDate(LocalDate date) {
+        return appointmentRepository.findApprovedAppointmentsByDate(date);
+
     }
 
 }

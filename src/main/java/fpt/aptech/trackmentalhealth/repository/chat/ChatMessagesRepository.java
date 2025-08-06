@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
-public interface ChatMessagesRepository extends JpaRepository<ChatMessage,Integer> {
+public interface ChatMessagesRepository extends JpaRepository<ChatMessage, Integer> {
 
     @Query("select cs from ChatMessage cs where cs.session.id=:idSession")
     List<ChatMessage> getChatMessagesByIdSession(int idSession);
@@ -18,5 +18,13 @@ public interface ChatMessagesRepository extends JpaRepository<ChatMessage,Intege
     @Transactional
     @Query("UPDATE ChatMessage m SET m.isRead = true WHERE m.session.id = :sessionId AND m.receiver.id = :receiverId AND m.isRead = false")
     void markAllMessagesAsRead(@Param("sessionId") int sessionId, @Param("receiverId") int receiverId);
+
+    @Query("""
+                SELECT CASE WHEN COUNT(m) > 0 THEN true ELSE false END
+                FROM ChatMessage m
+                WHERE m.receiver.id = :receiverId
+                  AND m.isRead = false
+            """)
+    boolean existsUnreadMessagesByReceiver(@Param("receiverId") int receiverId);
 
 }
