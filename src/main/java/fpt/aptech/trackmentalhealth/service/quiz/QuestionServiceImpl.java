@@ -2,6 +2,7 @@ package fpt.aptech.trackmentalhealth.service.quiz;
 
 import fpt.aptech.trackmentalhealth.dto.quiz.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.QuestionDTO;
+import fpt.aptech.trackmentalhealth.entities.DifficultLevel;
 import fpt.aptech.trackmentalhealth.entities.Option;
 import fpt.aptech.trackmentalhealth.entities.Question;
 import fpt.aptech.trackmentalhealth.entities.Topic;
@@ -45,8 +46,10 @@ public class QuestionServiceImpl implements QuestionService {
             questionDTO.setId(question.getId());
             questionDTO.setType(question.getType());
             questionDTO.setScore(question.getScore());
-            questionDTO.setTopicName(question.getTopic().getName());
-
+            questionDTO.setDifficulty(question.getDifficulty());
+            if(question.getTopic() != null) {
+                questionDTO.setTopicName(question.getTopic().getName());
+            }
             List<OptionDTO> optionDTOS = ConvertDTOtoEntity.convertOptionsToOptionDTO(question.getOptions());
             questionDTO.setOptions(optionDTOS);
             return questionDTO;
@@ -66,6 +69,11 @@ public class QuestionServiceImpl implements QuestionService {
             return 0;
         }
         Integer maxScore = 0;
+        // DOI VOI CAC DANG CAU HOI LOAI TRU BASED-SCORED THI PHAN LOAI CAU HOI VA CHO DIEM CUA CAU HOI
+        if( question.getDifficulty() != null ) {
+            return question.getScore();
+        }
+        // DOI VOI DANG CAU HOI DAC BIET BASED_SCORED THI DIEM CUA CUA HOI PHU THUOC VAO DIEM CAC DAP AN CUA NO
         for (Option option : question.getOptions()) {
             if(option.getScore() > maxScore) {
                 maxScore = option.getScore();

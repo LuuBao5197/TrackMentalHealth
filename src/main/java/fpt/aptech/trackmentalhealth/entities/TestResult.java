@@ -27,6 +27,6 @@ public class TestResult {
     private Integer maxScore;
 
     @Lob
-    @Column(name = "result_text")
+    @Column(name = "result_text", columnDefinition = "NVARCHAR(MAX)")
     private String resultText;
 }

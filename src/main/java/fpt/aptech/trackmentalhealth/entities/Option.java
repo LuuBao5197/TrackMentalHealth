@@ -13,7 +13,7 @@ public class Option {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
     private String content;
     @Column(name = "is_correct")
     private boolean correct;
