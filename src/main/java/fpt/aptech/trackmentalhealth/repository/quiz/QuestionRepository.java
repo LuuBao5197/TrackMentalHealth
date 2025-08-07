@@ -18,4 +18,9 @@ public interface QuestionRepository extends JpaRepository<Question, Integer> {
                                      @Param("topicId") Integer topicId,
                                      @Param("type") String type,
                                      Pageable pageable);
+
+    @Query(
+            "select q from Question q where q.id =:id"
+    )
+    Question getQuestionById(@Param("id") Integer id);
 }

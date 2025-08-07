@@ -9,7 +9,8 @@ import java.util.List;
 
 public interface TestService {
     // Business logic cua Test
-    Page<Test> getTests(Pageable pageable);
+    Page<FullTestDTO> getTests(Pageable pageable);
+    Page<FullTestDTO> searchTests(String keyword, Pageable pageable);
     Test getTest(Integer id);
     Test createTest(Test test);
     Test updateTest(Integer id, Test test);
@@ -36,7 +37,6 @@ public interface TestService {
     void updateFullTest(FullTestDTO dto);
     Test checkDuplicateTest(String title);
 
-    Page<Test> searchTests(String keyword, Pageable pageable);
     // Ham lay diem toi da cua 1 bai test
     Integer getMaxMarkOfTest(Integer id);
     List<TestResult> createMultipleTestResults(List<TestResult> testResults);

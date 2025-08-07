@@ -12,5 +12,6 @@ public class QuizCreateDTO {
     private String title;
     private String description;
     private Integer timeLimit;
+    private Integer numberOfQuestions;
     private List<Integer> questionIds;
 }

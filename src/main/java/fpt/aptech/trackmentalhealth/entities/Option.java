@@ -18,7 +18,7 @@ public class Option {
     @Column(name = "is_correct")
     private boolean correct;
     private Integer score;
-    @JsonBackReference
+//    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "question_id")
     private Question question;

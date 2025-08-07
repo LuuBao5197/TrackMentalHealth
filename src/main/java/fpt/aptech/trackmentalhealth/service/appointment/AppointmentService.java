@@ -2,6 +2,7 @@ package fpt.aptech.trackmentalhealth.service.appointment;
 
 import fpt.aptech.trackmentalhealth.entities.Appointment;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface AppointmentService {
@@ -19,4 +20,5 @@ public interface AppointmentService {
 
     boolean hasPendingAppointment(int userId, int psyId);
 
+    List<Appointment> getApprovedAppointmentsByDate(LocalDate date);
 }

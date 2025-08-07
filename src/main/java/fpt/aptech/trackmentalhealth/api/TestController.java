@@ -50,7 +50,7 @@ public class TestController {
             @RequestParam(required = false) String search) {
 
         Pageable pageable = PageRequest.of(page - 1, size);
-        Page<Test> tests;
+        Page<FullTestDTO> tests;
 
         if (search != null && !search.isEmpty()) {
             tests = testService.searchTests(search, pageable);

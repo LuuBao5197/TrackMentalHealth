@@ -22,6 +22,7 @@ public class QuestionServiceImpl implements QuestionService {
     private QuestionRepository questionRepository;
     @Autowired
     private TopicService topicService;
+
     @Override
     public Question createQuestion(Question q) {
         return questionRepository.save(q);
@@ -56,5 +57,20 @@ public class QuestionServiceImpl implements QuestionService {
     @Override
     public Question getQuestionById(Integer id) {
         return questionRepository.findById(id).orElse(null);
+    }
+
+    @Override
+    public Integer getMaxScoreOfQuestion(Integer id) {
+        Question question = questionRepository.findById(id).orElse(null);
+        if (question == null) {
+            return 0;
+        }
+        Integer maxScore = 0;
+        for (Option option : question.getOptions()) {
+            if(option.getScore() > maxScore) {
+                maxScore = option.getScore();
+            }
+        }
+        return maxScore;
     }
 }
