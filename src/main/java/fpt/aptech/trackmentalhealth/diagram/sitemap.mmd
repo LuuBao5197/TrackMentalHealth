@@ -1,0 +1,66 @@
+graph TD
+%% Cấp cao nhất: Home
+    A[Home] --> B[About]
+    A --> C[Login]
+    A --> D[Register]
+
+%% User Dashboard
+    A --> E[User Dashboard]
+     E --> E1[Mental Health Tests]
+        E1 --> E1a[Take Test]
+        E1 --> E1b[Test History]
+     E --> E4[Mental Health Quiz]
+        E4 --> E4a[Do Quiz]
+        E4 --> E4b[Quiz History]
+     E --> E5[Mood and Diary]
+        E5 --> E5a[Write Mood]
+        E5 --> E5b[Write Diary]
+        E5 --> E5C[Mood and Diary History]
+     E --> E2[Blog]
+        E2 --> E2a[View Article]
+        E2 --> E2b[Comment Article]
+     E --> E3[Profile]
+     E --> E6[MiniSocial Page]
+        E6 --> E6a[New Feeds]
+        E6 --> E6b[Social Profile Page]
+     E --> E7[Lesson]
+     E --> E8[Exercise]
+     E --> E9[Chat Page]
+        E9 --> E9a[Chat Group]
+        E9 --> E9b[Chat with Psychologist]
+        E9 --> E9B[AI chat box]
+
+%% Psychologist Dashboard
+    A --> F[Psychologist Dashboard]
+     F --> F1[Appointments]
+     F --> F2[Client Reports]
+
+%% Admin Dashboard
+    A --> G[Admin Dashboard]
+     G --> G1[Manage Account]
+     G --> G2[Manage Reports]
+     G --> G3[Approve Contents]
+
+%% Content Creator Dashboard
+    A --> H[Content Creator Dashboard]
+     H --> H1[Manage Article]
+     H --> H2[Manage Lesson]
+     H --> H3[Manage Exercise]
+%% TEST_DESIGNER Dashboard
+    A --> K[Test Designer Dashboard]
+     K --> K1[Manage Test]
+      K1-->K1d[List Test with action]
+      K1-->K1a[Create Test]
+      K1-->K1b[Create Result of Test]
+      K1-->K1c[Create Test by Import File]
+     K --> K2[Manage Quiz]
+      K2 -->K2c[List Quiz with action]
+      K2 -->K2a[Create question]
+      K2 -->K2b[Create Quiz]
+%% Style nhóm màu nền + màu chữ
+    style A fill:#ffdd99,stroke:#333,stroke-width:2px,color:#000000
+    style E fill:#b3e6b3,stroke:#333,stroke-width:1px,color:#004d00
+    style F fill:#99ccff,stroke:#333,stroke-width:1px,color:#003366
+    style G fill:#ff9999,stroke:#333,stroke-width:1px,color:#660000
+    style H fill:#ff3308,stroke:#333, stroke-width:1px,color:#661122
+    style K fill:#38be46,stroke:#333, stroke-width:1px,color:#be3860

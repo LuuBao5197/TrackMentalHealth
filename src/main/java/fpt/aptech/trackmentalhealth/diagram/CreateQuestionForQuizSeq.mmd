@@ -1,0 +1,82 @@
+sequenceDiagram
+    participant U as Test Designer
+    participant W as Web App (Frontend)
+    participant A as QuestionController (API Backend)
+    participant D as Database
+
+    U->>W: Open "Create Question" page
+    W-->>U: Render form (select question type)
+    U-->>W: Select type (Single, Multi, Text, Score, Matching, Order)
+
+%% Hiển thị form phù hợp
+    W->>W: Show input fields based on type
+    note right of W: <b>Single/Multi</b>: options + correct answer<br/><b>Text</b>: expected answer<br/><b>Score</b>: criteria + score<br/><b>Matching</b>: pairs<br/><b>Order</b>: sequence
+
+    U-->>W: Fill in question data
+    U-->>W: Click "Save Question"
+    W->>W: Frontend validate fields (title, options, answers)
+    alt Frontend validation failed
+        W-->>U: Show validation errors
+    else Frontend validation passed
+        W->>A: POST /questions (topic, type, difficulty, content, score, options, matchingItem)
+        activate A
+
+    %% Backend validate
+        A->>A: Validate question data by type
+        alt Backend validation failed
+            A-->>W: Status 400 (Validation errors)
+            W-->>U: Show error messages
+            deactivate A
+        else Backend validation passed
+        %% Start transaction
+            A->>D: BEGIN TRANSACTION
+            activate D
+
+        %% Insert Question
+            A->>D: INSERT INTO Question (quizId, type, content, ...)
+            D-->>A: Return QuestionID
+
+        %% Insert related data based on type
+            activate A
+            alt Single-choice or Multi-choice
+                loop Each option
+                    A->>D: INSERT INTO Option (QuestionID, optionText, isCorrect, ...)
+                    D-->>A: Success
+                end
+            else Text input
+                A->>D: INSERT INTO Option (QuestionID, answerText)
+                D-->>A: Success
+            else Score-based
+                loop Each score criteria
+                    A->>D: INSERT INTO Option (QuestionID, content, score)
+                    D-->>A: Success
+                end
+            else Matching
+                loop Each pair
+                    A->>D: INSERT INTO MatchingItem (QuestionID, leftItem, rightItem)
+                    D-->>A: Success
+                end
+            else Order
+                loop Each item
+                    A->>D: INSERT INTO QuestionOrderItem (QuestionID, itemText, position)
+                    D-->>A: Success
+                end
+            end
+
+        %% Commit or Rollback
+            alt All inserts success
+                A->>D: COMMIT
+                D-->>A: Commit success
+                A-->>W: Status 201 (Question created successfully)
+                W-->>U: Show success message & refresh question list
+            else Any insert failed
+                A->>D: ROLLBACK
+                D-->>A: Rollback success
+                A-->>W: Status 500 (Create question failed)
+                W-->>U: Show error message
+            end
+
+            deactivate D
+            deactivate A
+        end
+    end

@@ -1,0 +1,59 @@
+sequenceDiagram
+    participant U as Test Designer
+    participant W as Web App (Frontend)
+    participant A as TestController (API Backend)
+    participant D as Database
+
+    U->>W: Open "Create Test" page
+    W-->>U: Render form (Test info + Questions + Options)
+
+    U-->>W: Fill in Test, Questions, Options
+    U-->>W: Click "Create Test"
+    W->>W: Frontend validate (required fields, max 4 options/question)
+    alt Frontend validation failed
+        W-->>U: Show validation errors on form
+    else Frontend validation passed
+        W->>A: POST /tests (testData: {title, description, instructions, questions, options})
+        activate A
+
+    %% Backend validate
+        A->>A: Validate testData (not empty, require question, ...)
+        alt Backend validation failed
+            A-->>W: Status 400 (Validation errors)
+            W-->>U: Show error messages
+            deactivate A
+        else Backend validation passed
+        %% Start transaction
+            A->>D: BEGIN TRANSACTION
+            activate D
+
+        %% Insert Test
+            A->>D: INSERT INTO Test (...)
+            D-->>A: Return TestID
+
+        %% Insert Questions + Options
+        activate A
+            loop For each Question
+                A->>D: INSERT INTO TestQuestion (TestID, ...)
+                D-->>A: Return QuestionID
+                loop For each Option
+                    A->>D: INSERT INTO TestOption (QuestionID, ...)
+                    D-->>A: Success/Fail
+                end
+            end
+
+            alt All insert success
+                A->>D: COMMIT
+                D-->>A: Commit success
+                A-->>W: Status 201 (Test created successfully)
+                W-->>U: Show success message & redirect Test List
+            else Any insert failed
+                A->>D: ROLLBACK
+                D-->>A: Rollback success
+                A-->>W: Status 500 (Server error)
+                W-->>U: Show "Create test failed"
+            end
+            deactivate D
+            deactivate A
+        end
+    end
