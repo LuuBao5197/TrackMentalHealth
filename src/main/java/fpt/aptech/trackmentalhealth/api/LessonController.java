@@ -17,6 +17,15 @@ public class LessonController {
     @Autowired
     private LessonService lessonService;
 
+    @Autowired
+    private fpt.aptech.trackmentalhealth.service.openai.OpenAiService openAiService;
+
+    @GetMapping("/generate-content")
+    public ResponseEntity<String> generateContentFromTitle(@RequestParam String title) {
+        String content = openAiService.generateLessonContent(title);
+        return ResponseEntity.ok(content);
+    }
+
     @GetMapping
     public ResponseEntity<List<LessonDto>> getAllLessons() {
         List<LessonDto> lessons = lessonService.getAllLessons();
