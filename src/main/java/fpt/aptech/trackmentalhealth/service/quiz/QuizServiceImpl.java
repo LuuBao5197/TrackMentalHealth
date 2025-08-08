@@ -33,9 +33,8 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public Page<QuizDTO> findAll(Pageable pageable) {
         Page<Quiz> quizzes = quizRepository.findAll(pageable);
-        List<Quiz> quizzesList = quizzes.getContent();
         List<QuizDTO> quizDTOList = new ArrayList<>();
-        for (Quiz quiz : quizzesList) {
+        for (Quiz quiz : quizzes.getContent()) {
             QuizDTO quizDTO = new QuizDTO();
             quizDTO.setId(quiz.getId());
             quizDTO.setTitle(quiz.getTitle());
@@ -45,8 +44,8 @@ public class QuizServiceImpl implements QuizService {
             quizDTO.setHasResults(quiz.getQuizResults() != null);
             quizDTOList.add(quizDTO);
         }
-        Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
-        return quizDTOPage;
+        // ✅ Truyền thêm pageable và totalElements
+        return new PageImpl<>(quizDTOList, pageable, quizzes.getTotalElements());
     }
 
     @Override
@@ -98,9 +97,8 @@ public class QuizServiceImpl implements QuizService {
     @Override
     public Page<QuizDTO> searchQuizzes(String keyword, Pageable pageable) {
         Page<Quiz> quizzes = quizRepository.searchQuiz(keyword, pageable);
-        List<Quiz> quizzesList = quizzes.getContent();
         List<QuizDTO> quizDTOList = new ArrayList<>();
-        for (Quiz quiz : quizzesList) {
+        for (Quiz quiz : quizzes.getContent()) {
             QuizDTO quizDTO = new QuizDTO();
             quizDTO.setId(quiz.getId());
             quizDTO.setTitle(quiz.getTitle());
@@ -110,8 +108,7 @@ public class QuizServiceImpl implements QuizService {
             quizDTO.setHasResults(quiz.getQuizResults() != null);
             quizDTOList.add(quizDTO);
         }
-        Page<QuizDTO> quizDTOPage = new PageImpl<>(quizDTOList);
-        return quizDTOPage;
+        return new PageImpl<>(quizDTOList, pageable, quizzes.getTotalElements());
     }
 
     @Override

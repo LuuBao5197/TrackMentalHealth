@@ -34,6 +34,7 @@ public class QuestionController {
         Question newQuestion = new Question();
         newQuestion.setContent(questionDTO.getContent());
         newQuestion.setType(questionDTO.getType());
+        newQuestion.setDifficulty(questionDTO.getDifficulty());
 //        newQuestion.setScore(questionDTO.getScore());
 
         // Gán Topic nếu cần (nếu bạn có entity Topic)

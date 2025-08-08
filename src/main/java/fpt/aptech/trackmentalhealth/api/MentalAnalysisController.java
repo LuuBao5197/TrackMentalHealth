@@ -131,7 +131,7 @@ public class MentalAnalysisController {
                     try {
                         // Parse JSON từ chuỗi result
                         ObjectMapper objectMapper = new ObjectMapper();
-                        Map<String, Object> parsedResult = objectMapper.readValue(result, Map.class);
+                        Map<String, Object> parsedResult = objectMapper.            readValue(result, Map.class);
 
                         // Nếu có gợi ý bài test thì tìm testId và thêm vào
                         Map<String, Object> suggestion = (Map<String, Object>) parsedResult.get("suggestion");
