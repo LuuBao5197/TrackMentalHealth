@@ -13,13 +13,19 @@ import java.util.List;
 public class ExerciseServiceImp implements ExerciseService {
     ExerciseRepository exerciseRepository;
 
-
-
     @Autowired
     private ContentModerationService contentModerationService;
 
     public ExerciseServiceImp(ExerciseRepository exerciseRepository) {
         this.exerciseRepository = exerciseRepository;
+    }
+
+    @Override
+    public void approveExercise(Integer id) {
+        Exercise exercise = exerciseRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Exercise not found"));
+        exercise.setStatus("true"); // đổi sang duyệt
+        exerciseRepository.save(exercise);
     }
 
     @Override

@@ -26,6 +26,17 @@ public class LessonController {
         return ResponseEntity.ok(content);
     }
 
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveLesson(@PathVariable Integer id) {
+        try {
+            LessonDto approvedLesson = lessonService.approveLesson(id);
+            return ResponseEntity.ok(approvedLesson);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(ex.getMessage());
+        }
+    }
+
+
     @GetMapping
     public ResponseEntity<List<LessonDto>> getAllLessons() {
         List<LessonDto> lessons = lessonService.getAllLessons();

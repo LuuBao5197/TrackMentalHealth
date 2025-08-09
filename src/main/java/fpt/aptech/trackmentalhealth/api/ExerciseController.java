@@ -23,6 +23,18 @@ public class ExerciseController {
     @Autowired
     private ContentCreatorRepository contentCreatorRepository;
 
+
+    // APPROVE exercise
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveExercise(@PathVariable Integer id) {
+        try {
+            exerciseService.approveExercise(id);
+            return ResponseEntity.ok("Exercise approved successfully");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
     // GET all exercises
     @GetMapping("/")
     public ResponseEntity<List<ExerciseDTO>> getAllExercises() {
