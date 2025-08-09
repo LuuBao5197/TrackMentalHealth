@@ -3,7 +3,6 @@ package fpt.aptech.trackmentalhealth.api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import fpt.aptech.trackmentalhealth.entities.Test;
 import fpt.aptech.trackmentalhealth.entities.Users;
-
 import fpt.aptech.trackmentalhealth.repository.test.TestRepository;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.diary.DiaryService;
@@ -132,7 +131,7 @@ public class MentalAnalysisController {
                     try {
                         // Parse JSON từ chuỗi result
                         ObjectMapper objectMapper = new ObjectMapper();
-                        Map<String, Object> parsedResult = objectMapper.readValue(result, Map.class);
+                        Map<String, Object> parsedResult = objectMapper.            readValue(result, Map.class);
 
                         // Nếu có gợi ý bài test thì tìm testId và thêm vào
                         Map<String, Object> suggestion = (Map<String, Object>) parsedResult.get("suggestion");

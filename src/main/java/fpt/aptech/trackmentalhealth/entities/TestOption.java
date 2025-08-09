@@ -21,7 +21,7 @@ public class TestOption {
     private TestQuestion question;
 
     @Lob
-    @Column(name = "option_text")
+    @Column(name = "option_text", columnDefinition = "NVARCHAR(MAX)")
     private String optionText;
 
     @Column(name = "score_value")

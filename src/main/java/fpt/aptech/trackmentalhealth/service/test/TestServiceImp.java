@@ -48,7 +48,7 @@ public class TestServiceImp implements TestService {
             fullTestDTO.setHasResult(test.getResults() != null);
             fullTestDTOList.add(fullTestDTO);
         }
-        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList);
+        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
         return fullTestDTOPage;
     }
 
@@ -66,7 +66,7 @@ public class TestServiceImp implements TestService {
             fullTestDTO.setHasResult(test.getResults() != null);
             fullTestDTOList.add(fullTestDTO);
         }
-        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList);
+        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
         return fullTestDTOPage;
     }
 
