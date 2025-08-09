@@ -1,0 +1,25 @@
+sequenceDiagram
+    participant U as User
+    participant W as Web App
+    participant A as AuthController
+    participant D as Database
+
+    U->>W: Enter email & password
+    activate W
+    W->>A: POST /login (email, password)
+    activate A
+    A->>D: SELECT user WHERE email=...
+    activate D
+    D-->>A: Information User
+    deactivate D
+
+    alt Login successfully
+        A-->>W: JWT Token + User Info
+        W-->>U: Display login successfully and dashboard page
+    else Login failed
+        A-->>W: Error: Invalid email or password
+        W-->>U: Display login failed
+    end
+
+    deactivate A
+    deactivate W

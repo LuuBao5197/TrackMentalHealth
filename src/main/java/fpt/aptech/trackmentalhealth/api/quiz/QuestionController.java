@@ -1,14 +1,17 @@
 package fpt.aptech.trackmentalhealth.api.quiz;
 
+import fpt.aptech.trackmentalhealth.dto.quiz.MatchingItemDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.QuestionCreateDTO;
 import fpt.aptech.trackmentalhealth.dto.quiz.QuestionDTO;
+import fpt.aptech.trackmentalhealth.entities.MatchingItem;
 import fpt.aptech.trackmentalhealth.entities.Option;
 import fpt.aptech.trackmentalhealth.entities.Question;
 import fpt.aptech.trackmentalhealth.entities.Topic;
 import fpt.aptech.trackmentalhealth.repository.quiz.OptionRepository;
 import fpt.aptech.trackmentalhealth.service.quiz.QuestionService;
 import fpt.aptech.trackmentalhealth.service.quiz.TopicService;
+import fpt.aptech.trackmentalhealth.ultis.ConvertDTOtoEntity;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -16,6 +19,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -34,37 +38,54 @@ public class QuestionController {
         Question newQuestion = new Question();
         newQuestion.setContent(questionDTO.getContent());
         newQuestion.setType(questionDTO.getType());
-        newQuestion.setDifficulty(questionDTO.getDifficulty());
-//        newQuestion.setScore(questionDTO.getScore());
 
-        // Gán Topic nếu cần (nếu bạn có entity Topic)
+        if (questionDTO.getDifficulty() != null) {
+            newQuestion.setDifficulty(questionDTO.getDifficulty());
+        }
+        if(questionDTO.getScore() != null) {
+            newQuestion.setScore(questionDTO.getScore());
+        }
+
+        // Gán Topic nếu có
         if (questionDTO.getTopicID() != null) {
             Topic topic = topicService.getTopicById(questionDTO.getTopicID());
             newQuestion.setTopic(topic);
         }
 
-        // Lưu Question trước để sinh ID
-        newQuestion = questionService.createQuestion(newQuestion);
+        // Gán Matching Items (chưa gọi save vội)
+        if (questionDTO.getMatchingItems() != null) {
+            List<MatchingItemDTO> matchingItemsDTO = questionDTO.getMatchingItems();
+            List<MatchingItem> matchingItemList = new ArrayList<>();
+            for (MatchingItemDTO matchingItemDTO : matchingItemsDTO) {
+                MatchingItem matchingItem = new MatchingItem();
+                matchingItem.setLeftItem(matchingItemDTO.getLeftItem());
+                matchingItem.setRightItem(matchingItemDTO.getRightItem());
+                matchingItem.setQuestion(newQuestion); // set ngược
+                matchingItemList.add(matchingItem);
+            }
+            newQuestion.setMatchingItems(matchingItemList);
+        }
 
-        // Gán và lưu từng Option
+        // Gán Options
         List<OptionDTO> options = questionDTO.getOptions();
-        if (options == null || options.isEmpty()) {
-            return ResponseEntity.badRequest().body("Question must have at least one option");
+        if (options != null) {
+            List<Option> optionList = new ArrayList<>();
+            for (OptionDTO optionDTO : options) {
+                Option newOption = new Option();
+                newOption.setContent(optionDTO.getContent());
+                newOption.setCorrect(optionDTO.isCorrect());
+                newOption.setScore(optionDTO.getScore());
+                newOption.setQuestion(newQuestion);
+                optionList.add(newOption);
+            }
+            newQuestion.setOptions(optionList); // nếu bạn có setOptions trong entity
         }
 
-        for (OptionDTO optionDTO : options) {
-            Option newOption = new Option();
-            newOption.setContent(optionDTO.getContent());
-            newOption.setCorrect(optionDTO.isCorrect());
-            newOption.setQuestion(newQuestion); // Gán Question
-            newOption.setScore(optionDTO.getScore());
-            optionRepository.save(newOption); // Lưu Option (cần có trong service)
-        }
+        // Chỉ bây giờ mới lưu
         newQuestion = questionService.createQuestion(newQuestion);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(newQuestion);
+        return ResponseEntity.status(HttpStatus.CREATED).body("OK Created Question");
     }
-
 
 
     @GetMapping
@@ -77,6 +98,7 @@ public class QuestionController {
         Page<QuestionDTO> result = questionService.getAllQuestions(keyword, topicId, type, pageable);
         return ResponseEntity.ok(result);
     }
+
     @GetMapping("/{id}")
     public ResponseEntity<Question> getById(@PathVariable Integer id) {
         return ResponseEntity.ok(questionService.getQuestionById(id));

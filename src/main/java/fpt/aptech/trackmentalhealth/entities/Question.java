@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
+@Table(name = "question")
 @Getter
 @Setter
 public class Question {
@@ -31,7 +32,7 @@ public class Question {
     private List<QuizQuestion> quizQuestions = new ArrayList<>();
 
 //    @JsonManagedReference
-    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Option> options;
    // Doi voi loai cau hoi MATCHING
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
