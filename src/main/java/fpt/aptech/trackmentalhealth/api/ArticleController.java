@@ -33,6 +33,17 @@ public class ArticleController {
     @Autowired
     UserRepository userRepository;
 
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveArticle(@PathVariable Integer id) {
+        try {
+            ArticleDTO approvedArticle = articleService.approveArticle(id);
+            return ResponseEntity.ok(approvedArticle);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        }
+    }
+
     // GET ALL
     @GetMapping("/")
     public ResponseEntity<List<ArticleDTO>> getAllArticles() {
