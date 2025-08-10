@@ -1,9 +1,11 @@
 package fpt.aptech.trackmentalhealth.dto.quiz;
 
 import fpt.aptech.trackmentalhealth.entities.DifficultLevel;
+import fpt.aptech.trackmentalhealth.entities.OrderingItem;
 import fpt.aptech.trackmentalhealth.entities.Topic;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 @Data
 public class QuestionDTO {
@@ -16,6 +18,6 @@ public class QuestionDTO {
     private List<OptionDTO> options;
     private List<TopicDTO> topics;
     private List<MatchingItemDTO> matchingItems; // Dữ liệu matching ở đây
-
+    private List<OrderingItemDTO> orderingItems; // Du lieu ordering o day
     // getters, setters, constructor
 }

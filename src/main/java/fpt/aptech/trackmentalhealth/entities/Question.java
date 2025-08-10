@@ -22,7 +22,7 @@ public class Question {
     private Topic topic;
     @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
     private String content;
-    private String type; // MULTI_CHOICE, TEXT_INPUT, NUMBER_INPUT, SCORE_BASED, MATCHING, ORDER
+    private String type; // MULTI_CHOICE, TEXT_INPUT, NUMBER_INPUT, SCORE_BASED, MATCHING, ORDERING
     @Enumerated(EnumType.STRING)
     @Column(name = "difficulty")
     private DifficultLevel difficulty; // EASY, MEDIUM, HARD
@@ -38,4 +38,6 @@ public class Question {
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<MatchingItem> matchingItems = new ArrayList<>();
 
+    @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrderingItem> orderingItems = new ArrayList<>();
 }

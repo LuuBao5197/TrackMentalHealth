@@ -15,4 +15,5 @@ public class QuestionCreateDTO {
     private Integer topicID; // hoặc topicId nếu cần
     private List<OptionDTO> options;
     private List<MatchingItemDTO> matchingItems; // Dữ liệu matching ở đây
+    private List<OrderingItemDTO> orderingItems; // Du lieu ordering o day
 }
