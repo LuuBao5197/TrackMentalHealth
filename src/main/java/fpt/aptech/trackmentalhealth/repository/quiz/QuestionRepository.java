@@ -11,9 +11,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface QuestionRepository extends JpaRepository<Question, Integer> {
     @Query("SELECT q FROM Question q " +
-            "WHERE (:keyword IS NULL OR LOWER(q.content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
-            "AND (:topicId IS NULL OR q.topic.id = :topicId) " +
-            "AND (:type IS NULL OR q.type = :type)")
+            "WHERE (:keyword IS NULL OR :keyword = '' OR LOWER(q.content) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (:topicId IS NULL OR :topicId = 0 OR q.topic.id = :topicId) " +
+            "AND (:type IS NULL OR :type ='' OR UPPER(q.type) = UPPER(:type))")
     Page<Question> searchWithFilters(@Param("keyword") String keyword,
                                      @Param("topicId") Integer topicId,
                                      @Param("type") String type,
