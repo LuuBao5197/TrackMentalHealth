@@ -1,4 +1,4 @@
-package fpt.aptech.trackmentalhealth.service.openai;
+package fpt.aptech.trackmentalhealth.service.lesson;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,6 +18,17 @@ public class OpenAiService {
     private final RestTemplate restTemplate = new RestTemplate();
     private final ObjectMapper objectMapper = new ObjectMapper();
 
+    /**
+     * Kiểm tra xem chuỗi có chứa dấu tiếng Việt hay không,
+     * để xác định ngôn ngữ (đơn giản).
+     */
+    private boolean isVietnamese(String text) {
+        // Chuẩn đơn giản: nếu có ký tự dấu tiếng Việt trong text thì trả true
+        return text.matches(".*[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡ"
+                + "ùúụủũưừứựửữỳýỵỷỹđÀÁẠẢÃÂẦẤẬẨẪĂẰẮẶẲẴÈÉẸẺẼÊỀẾỆỂỄÌÍỊỈĨ"
+                + "ÒÓỌỎÕÔỒỐỘỔỖƠỜỚỢỞỠÙÚỤỦŨƯỪỨỰỬỮỲÝỴỶỸĐ].*");
+    }
+
     public String generateLessonContent(String lessonTitle) {
         try {
             String apiUrl = "https://api.openai.com/v1/chat/completions";
@@ -26,11 +37,22 @@ public class OpenAiService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.setBearerAuth(openAiApiKey);
 
+            boolean isViet = isVietnamese(lessonTitle);
+
+            // Tạo message system và user theo ngôn ngữ tương ứng
+            String systemContent = isViet
+                    ? "Bạn là một chuyên gia viết nội dung cho các bài học. Vui lòng trả lời bằng tiếng Việt."
+                    : "You are an expert content writer for lessons. Please respond in English.";
+
+            String userContent = isViet
+                    ? "Viết nội dung bài học cho tiêu đề: " + lessonTitle
+                    : "Write lesson content for the title: " + lessonTitle;
+
             Map<String, Object> requestBody = Map.of(
                     "model", "gpt-3.5-turbo",
-                    "messages", new Object[] {
-                            Map.of("role", "system", "content", "Bạn là một chuyên gia viết nội dung cho các bài học."),
-                            Map.of("role", "user", "content", "Viết nội dung bài học cho tiêu đề: " + lessonTitle)
+                    "messages", new Object[]{
+                            Map.of("role", "system", "content", systemContent),
+                            Map.of("role", "user", "content", userContent)
                     },
                     "temperature", 0.7
             );
@@ -43,7 +65,9 @@ public class OpenAiService {
 
         } catch (Exception e) {
             e.printStackTrace();
-            return "Không thể tạo nội dung. Vui lòng thử lại sau.";
+            return isVietnamese(lessonTitle)
+                    ? "Không thể tạo nội dung. Vui lòng thử lại sau."
+                    : "Unable to generate content. Please try again later.";
         }
     }
 }
