@@ -33,8 +33,6 @@ public class ChatAIController {
 
     @PostMapping("/ask")
     public ResponseEntity<String> askAI(@RequestBody ChatAIRequest request) {
-        System.out.println("AI KEY:" + aiKey);
-
         try {
             String API_KEY = "Bearer " + aiKey;
 

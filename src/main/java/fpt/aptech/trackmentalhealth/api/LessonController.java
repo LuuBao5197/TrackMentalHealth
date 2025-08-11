@@ -17,6 +17,26 @@ public class LessonController {
     @Autowired
     private LessonService lessonService;
 
+    @Autowired
+    private fpt.aptech.trackmentalhealth.service.openai.OpenAiService openAiService;
+
+    @GetMapping("/generate-content")
+    public ResponseEntity<String> generateContentFromTitle(@RequestParam String title) {
+        String content = openAiService.generateLessonContent(title);
+        return ResponseEntity.ok(content);
+    }
+
+    @PutMapping("/{id}/approve")
+    public ResponseEntity<?> approveLesson(@PathVariable Integer id) {
+        try {
+            LessonDto approvedLesson = lessonService.approveLesson(id);
+            return ResponseEntity.ok(approvedLesson);
+        } catch (RuntimeException ex) {
+            return ResponseEntity.status(404).body(ex.getMessage());
+        }
+    }
+
+
     @GetMapping
     public ResponseEntity<List<LessonDto>> getAllLessons() {
         List<LessonDto> lessons = lessonService.getAllLessons();

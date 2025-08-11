@@ -158,6 +158,8 @@ public class LessonService {
         return dto;
     }
 
+
+
     public List<LessonStepDto> getLessonStepsByLessonId(Integer lessonId) {
         Lesson lesson = lessonRepository.findById(lessonId)
                 .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + lessonId));
@@ -224,4 +226,15 @@ public class LessonService {
             return dto;
         }).collect(Collectors.toList());
     }
+
+    @Transactional
+    public LessonDto approveLesson(Integer id) {
+        Lesson lesson = lessonRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Lesson not found with ID: " + id));
+
+        lesson.setStatus("true"); // duyệt bài -> status = true
+        lessonRepository.save(lesson);
+        return getLessonById(id); // trả lại LessonDto sau khi duyệt
+    }
+
 }

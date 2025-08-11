@@ -20,6 +20,18 @@ public class ArticleServiceImp implements ArticleService {
     @Autowired
     private ContentModerationService contentModerationService;
 
+
+    @Override
+    public ArticleDTO approveArticle(Integer id) {
+        Article article = articleRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Article not found with ID: " + id));
+
+        article.setStatus("true"); // duyệt bài -> status = true
+        articleRepository.save(article);
+
+        return new ArticleDTO(article);
+    }
+
     public ArticleServiceImp(ArticleRepository articleRepository) {
         this.articleRepository = articleRepository;
     }

@@ -103,4 +103,9 @@ public class ChatGroupController {
         List<Users> users = chatService.findUserByGroupId(groupId, userId);
         return users;
     }
+
+    @GetMapping("/lastest-message/{groupId}")
+    public ChatMessageGroup getLatestMessageGroup(@PathVariable int groupId){
+        return chatService.getLatestMessageGroup(groupId);
+    }
 }

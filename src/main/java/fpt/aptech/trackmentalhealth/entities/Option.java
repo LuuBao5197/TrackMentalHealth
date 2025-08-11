@@ -13,12 +13,12 @@ public class Option {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    @Column(name = "content", columnDefinition = "NVARCHAR(MAX)")
     private String content;
     @Column(name = "is_correct")
     private boolean correct;
     private Integer score;
-    @JsonBackReference
+//    @JsonBackReference
     @ManyToOne
     @JoinColumn(name = "question_id")
     private Question question;

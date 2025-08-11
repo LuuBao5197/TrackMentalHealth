@@ -1,0 +1,52 @@
+sequenceDiagram
+    participant U as User
+    participant W as Web App
+    participant A as AuthController
+    participant D as Database
+
+    U->>W: Enter register data
+    activate W
+    alt Data is Valid
+        W->>A: POST /check-email (email)
+        activate A
+        A->>D: SELECT COUNT(*) FROM User WHERE email=...
+        activate D
+        D-->>A: Email exists / not exists
+        deactivate D
+
+        alt Email exists
+            A-->>W: Status 409 (Email already registered)
+            W-->>U: Display "Email already exists" error
+        else Email not exists
+            A-->>W: Status 200 (Email available)
+            W->>A: POST /send-otp (email)
+            activate A
+            A-->>W: OTP sent successfully
+            deactivate A
+
+            W-->>U: Prompt user to enter OTP
+            U->>W: Enter OTP
+            alt OTP is Correct
+                W->>A: POST /register (email, password, avatar, ...)
+                activate A
+                A->>D: INSERT new User
+                activate D
+                D-->>A: Insert success/fail
+                deactivate D
+
+                alt Register successfully
+                    A-->>W: Status 201
+                    W-->>U: Display register successfully and redirect LoginPage
+                else Register failed
+                    A-->>W: Status 400, 500, ...
+                    W-->>U: Display register failed
+                end
+                deactivate A
+            else OTP is Incorrect
+                W-->>U: Display OTP invalid error
+            end
+        end
+    else Data is not Valid
+        W-->>U: Display register failed
+    end
+    deactivate W

@@ -135,5 +135,20 @@ public class ChatServiceImp implements ChatService {
         return userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
     }
 
+    @Override
+    public boolean hasUnreadMessages(int receiverId) {
+        return chatMessagesRepository.existsUnreadMessagesByReceiver(receiverId);
+    }
+
+    @Override
+    public ChatMessage getLatestMessage(int sessionId) {
+        return chatSessionRepository.getLatestMessageBySessionId(sessionId);
+    }
+
+    @Override
+    public ChatMessageGroup getLatestMessageGroup(int groupId) {
+        return chatGroupRepository.findLatestMessageByGroupId(groupId);
+    }
+
 
 }

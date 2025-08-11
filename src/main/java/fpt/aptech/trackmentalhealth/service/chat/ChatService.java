@@ -43,4 +43,10 @@ public interface ChatService {
     List<Users> findUserByGroupId(int groupId,int currentUserId);
 
     Users findUserById(int id);
+
+    boolean hasUnreadMessages(int receiverId);
+
+    ChatMessage getLatestMessage(int sessionId);
+
+    ChatMessageGroup getLatestMessageGroup(int groupId);
 }

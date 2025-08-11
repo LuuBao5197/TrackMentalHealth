@@ -20,15 +20,15 @@ public class Test {
     private Integer id;
 
     @Size(max = 255)
-    @Column(name = "title", unique = true)
+    @Column(name = "title", unique = true, columnDefinition = "NVARCHAR(MAX)")
     private String title;
 
     @Lob
-    @Column(name = "description")
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
 
     @Lob
-    @Column(name = "instructions")
+    @Column(name = "instructions", columnDefinition = "NVARCHAR(MAX)")
     private String instructions;
 
     @Column(name = "created_by")

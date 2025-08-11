@@ -1,0 +1,23 @@
+flowchart LR
+    subgraph Client
+        W[ReactJS Web App]
+        M[Flutter Mobile App]
+    end
+
+    subgraph Backend
+        API[Spring Boot API]
+    end
+
+    subgraph Services
+        DB[(SQL Server Database)]
+        Email[Email/OTP Service]
+        Auth[JWT & Refresh Token Service]
+        Cache[Redis Cache]
+    end
+
+    W -- AXIOS --> API
+    M -- HTTP --> API
+    API -- Read/Write --> DB
+    API -- Send OTP --> Email
+    API -- Generate Tokens --> Auth
+    API -- Store/Retrieve --> Cache

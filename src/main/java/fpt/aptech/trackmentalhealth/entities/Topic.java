@@ -25,6 +25,5 @@ public class Topic {
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime deletedAt;
     @OneToMany(mappedBy = "topic", cascade = CascadeType.ALL)
-    @JsonBackReference
     private List<Question> questions;
 }

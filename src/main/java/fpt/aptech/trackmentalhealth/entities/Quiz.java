@@ -13,9 +13,11 @@ public class Quiz {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
-
+    @Column(name = "title", columnDefinition = "NVARCHAR(MAX)")
     private String title;
+    @Column(name = "description", columnDefinition = "NVARCHAR(MAX)")
     private String description;
+    private Integer numberOfQuestions;
     private Integer totalScore;
     private Integer timeLimit;
 
