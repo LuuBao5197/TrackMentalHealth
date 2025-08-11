@@ -24,10 +24,16 @@ public class UserQuizAnswerItem {
     @MapsId("questionId")
     @JoinColumn(name = "question_id")
     private Question question;
-
+    // luu dap an doi voi kieu cau hoi MULTI_CHOICE SINGLE_CHOICE
     @OneToMany(mappedBy = "answerItem", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserQuizAnswerItemOption> selectedOptions = new ArrayList<>();
-
+    // luu dap an voi question type MATCHING
+    @OneToMany(mappedBy = "answerItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserQuizAnswerItemMatching> matchingAnswers = new ArrayList<>();
+    // luu dap an voi question type ORDERING
+    @OneToMany(mappedBy = "answerItem", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserQuizAnswerItemOrdering> orderingAnswers = new ArrayList<>();
+    // luu dap an cho cau hoi INPUT_TEXT
     private String userInput; // for text/number input
 
     private Integer score;
