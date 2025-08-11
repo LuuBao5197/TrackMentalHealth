@@ -75,7 +75,6 @@ public class QuizController {
             qq.setQuestion(question);
             quizQuestions.add(qq);
         }
-
         quiz.setQuizQuestions(quizQuestions);
         quiz.setTotalScore(
                 quizQuestions.stream()

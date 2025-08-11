@@ -1,13 +1,7 @@
 package fpt.aptech.trackmentalhealth.api.quiz;
 
-import fpt.aptech.trackmentalhealth.dto.quiz.MatchingItemDTO;
-import fpt.aptech.trackmentalhealth.dto.quiz.OptionDTO;
-import fpt.aptech.trackmentalhealth.dto.quiz.QuestionCreateDTO;
-import fpt.aptech.trackmentalhealth.dto.quiz.QuestionDTO;
-import fpt.aptech.trackmentalhealth.entities.MatchingItem;
-import fpt.aptech.trackmentalhealth.entities.Option;
-import fpt.aptech.trackmentalhealth.entities.Question;
-import fpt.aptech.trackmentalhealth.entities.Topic;
+import fpt.aptech.trackmentalhealth.dto.quiz.*;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.quiz.OptionRepository;
 import fpt.aptech.trackmentalhealth.service.quiz.QuestionService;
 import fpt.aptech.trackmentalhealth.service.quiz.TopicService;
@@ -81,8 +75,23 @@ public class QuestionController {
             newQuestion.setOptions(optionList); // nếu bạn có setOptions trong entity
         }
 
+        //Gan OrderingItem
+        List<OrderingItemDTO> orderingItemsDTO = questionDTO.getOrderingItems();
+        if(orderingItemsDTO != null) {
+            List<OrderingItem> orderingItemList = new ArrayList<>();
+            for (OrderingItemDTO orderingItemDTO : orderingItemsDTO) {
+                OrderingItem orderingItem = new OrderingItem();
+                orderingItem.setQuestion(newQuestion);
+                orderingItem.setContent(orderingItemDTO.getContent());
+                orderingItem.setCorrectOrder(orderingItemDTO.getCorrectOrder());
+                orderingItemList.add(orderingItem);
+            }
+            newQuestion.setOrderingItems(orderingItemList);
+        }
+
+
         // Chỉ bây giờ mới lưu
-        newQuestion = questionService.createQuestion(newQuestion);
+       questionService.createQuestion(newQuestion);
 
         return ResponseEntity.status(HttpStatus.CREATED).body("OK Created Question");
     }
