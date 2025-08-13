@@ -87,7 +87,7 @@ public class MentalAnalysisController {
                 + "   - Level 4: Nguy cơ cao (trầm cảm nghiêm trọng, tuyệt vọng...)\n"
                 + "2. Nếu Level = 3, chọn một bài test phù hợp từ danh sách trên và gợi ý.\n"
                 + "3. Nếu Level = 4, cảnh báo khẩn cấp và gợi ý liên hệ chuyên gia tâm lý hoặc bác sĩ. Không đề xuất bài test.\n"
-                + "4. Trả kết quả theo định dạng JSON như sau:\n"
+                + "4. Chỉ trả về JSON thuần theo đúng format sau, không kèm ký hiệu ``` hoặc văn bản khác:\n"
                 + "{\n"
                 + "  \"level\": 3,\n"
                 + "  \"description\": \"...\",\n"
@@ -108,6 +108,10 @@ public class MentalAnalysisController {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
+
+            // Nếu model hỗ trợ, yêu cầu trả JSON thuần
+            body.put("response_format", Map.of("type", "json_object"));
+
             List<Map<String, String>> messages = new ArrayList<>();
             messages.add(Map.of("role", "user", "content", prompt));
             body.put("messages", messages);
@@ -120,49 +124,56 @@ public class MentalAnalysisController {
                     Map.class
             );
 
-            if (response.getStatusCode().is2xxSuccessful()) {
+            if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                 Map data = response.getBody();
                 List choices = (List) data.get("choices");
+
                 if (!choices.isEmpty()) {
                     Map choice = (Map) choices.get(0);
                     Map messageMap = (Map) choice.get("message");
                     String result = (String) messageMap.get("content");
 
-                    try {
-                        // Parse JSON từ chuỗi result
-                        ObjectMapper objectMapper = new ObjectMapper();
-                        Map<String, Object> parsedResult = objectMapper.            readValue(result, Map.class);
+                    // Làm sạch kết quả nếu vẫn bị dính backtick
+                    String cleanResult = result.trim();
+                    if (cleanResult.startsWith("```")) {
+                        int firstBrace = cleanResult.indexOf("{");
+                        int lastBrace = cleanResult.lastIndexOf("}");
+                        if (firstBrace >= 0 && lastBrace >= 0) {
+                            cleanResult = cleanResult.substring(firstBrace, lastBrace + 1);
+                        }
+                    }
 
-                        // Nếu có gợi ý bài test thì tìm testId và thêm vào
+                    try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        Map<String, Object> parsedResult = objectMapper.readValue(cleanResult, Map.class);
+
+                        // Thêm testId nếu cần
                         Map<String, Object> suggestion = (Map<String, Object>) parsedResult.get("suggestion");
                         if (suggestion != null && "test".equals(suggestion.get("type"))) {
                             String testTitle = (String) suggestion.get("testTitle");
-
-                            Optional<Test> matchedTest = allTests.stream()
+                            allTests.stream()
                                     .filter(t -> t.getTitle().equalsIgnoreCase(testTitle))
-                                    .findFirst();
-
-                            matchedTest.ifPresent(test -> suggestion.put("testId", test.getId()));
+                                    .findFirst()
+                                    .ifPresent(test -> suggestion.put("testId", test.getId()));
                         }
 
-                        // Trả lại chuỗi JSON sau khi thêm testId
                         String modifiedJson = objectMapper.writeValueAsString(parsedResult);
                         return ResponseEntity.ok(modifiedJson);
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        // Nếu lỗi parse, vẫn trả về raw result
-                        return ResponseEntity.ok(result);
+                        // Trả về raw nếu JSON lỗi
+                        return ResponseEntity.ok(cleanResult);
                     }
                 }
             }
-
         } catch (Exception e) {
             e.printStackTrace();
         }
 
         return ResponseEntity.ok("Không thể phân tích lúc này.");
     }
+
 
     private Users getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
