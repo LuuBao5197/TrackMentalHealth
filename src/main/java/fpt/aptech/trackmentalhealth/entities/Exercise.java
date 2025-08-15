@@ -9,6 +9,7 @@ import org.hibernate.annotations.Nationalized;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 @Getter
@@ -59,4 +60,7 @@ public class Exercise {
     @OneToMany(mappedBy = "exercise")
     private Set<fpt.aptech.trackmentalhealth.entities.UserExerciseLog> userExerciseLogs = new LinkedHashSet<>();
 
+    // 👇 thêm mối quan hệ với ExerciseCondition
+    @OneToMany(mappedBy = "exercise", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<ExerciseCondition> conditions;
 }
