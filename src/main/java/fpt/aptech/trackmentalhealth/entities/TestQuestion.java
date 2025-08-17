@@ -28,8 +28,8 @@ public class TestQuestion {
     @Column(name = "question_text")
     private String questionText;
 
-    @Size(max = 10)
-    @Column(name = "question_type", length = 10)
+    @Size(max = 50)
+    @Column(name = "question_type")
     private String questionType;
 
     @Column(name = "question_order")

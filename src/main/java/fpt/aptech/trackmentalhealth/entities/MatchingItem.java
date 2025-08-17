@@ -14,7 +14,7 @@ public class MatchingItem {
     private Long id;
     @Column(length = 255, columnDefinition = "NVARCHAR(MAX)")
     private String leftItem;
-    @Column(length = 255, columnDefinition = "NVARCHAR(MAX")
+    @Column(length = 255, columnDefinition = "NVARCHAR(MAX)")
     private String rightItem;
 
     @ManyToOne

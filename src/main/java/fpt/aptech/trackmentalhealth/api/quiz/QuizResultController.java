@@ -21,8 +21,6 @@ public class QuizResultController {
     @Autowired
     private QuizResultService quizResultService;
 
-
-
     @PostMapping
     public ResponseEntity<QuizResult> create(@RequestBody  @Valid QuizResult result) {
         return ResponseEntity.ok(quizResultService.createResult(result));

@@ -116,12 +116,7 @@ public class QuizServiceImpl implements QuizService {
         List<Question> questionList = quizQuestionRepository.getAllQuestionOfQuiz(quizId);
         List<QuestionDTO> questionDTOList = new ArrayList<>();
         for (Question question : questionList) {
-            QuestionDTO questionDTO = new QuestionDTO();
-            questionDTO.setId(question.getId());
-            questionDTO.setType(question.getType());
-            questionDTO.setTopicName(question.getTopic().getName());
-            questionDTO.setContent(question.getContent());
-            questionDTO.setOptions(ConvertDTOtoEntity.convertOptionsToOptionDTO(question.getOptions()));
+            QuestionDTO questionDTO = ConvertDTOtoEntity.convertQuestionToQuestionDTO(question);
             questionDTOList.add(questionDTO);
         }
         return questionDTOList;
