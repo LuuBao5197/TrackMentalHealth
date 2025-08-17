@@ -1,6 +1,8 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.test.*;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestDetailDTO;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
@@ -17,10 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/test")
@@ -212,7 +211,6 @@ public class TestController {
     public ResponseEntity<List<TestResult>> createMultiTestResult(@RequestBody List<TestResult> testResults) {
         return ResponseEntity.status(HttpStatus.CREATED).body(testService.createMultipleTestResults(testResults));
     }
-
     @PutMapping("/testResult/{id}")
     public ResponseEntity<TestResult> updateTestResult(@PathVariable Integer id, @RequestBody TestResult testResult) {
         return ResponseEntity.status(HttpStatus.OK).body(testService.updateTestResult(id, testResult));
@@ -223,7 +221,6 @@ public class TestController {
         testService.deleteTestResult(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
     // api import file excel (xlsx) de tao bo cau hoi
     @PostMapping("/import-test")
     public ResponseEntity<?> importTest(@RequestParam("file") MultipartFile file) {
@@ -237,8 +234,6 @@ public class TestController {
                     .body(List.of("❌ Lỗi hệ thống: " + e.getMessage()));
         }
     }
-
-
     // api tao dong bo 1 bai test tu bai test cau hoi cac dap an den ket qua hien thi
 
     @PostMapping("/full")
@@ -248,6 +243,7 @@ public class TestController {
             testService.createFullTest(dto);
             return ResponseEntity.ok(Map.of("message", "Tạo bài test thành công"));
         } catch (Exception e) {
+            e.printStackTrace(); // 👈 In ra log server
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
@@ -270,7 +266,6 @@ public class TestController {
         }
     }
 
-
     @GetMapping("/{id}/getMaxScore")
     public ResponseEntity<Integer> getMaxScore(@PathVariable Integer id) {
 
@@ -278,9 +273,20 @@ public class TestController {
          return ResponseEntity.ok(maxScore);
     }
 
+    @GetMapping("/{id}/getMaxScore/{category}")
+    public ResponseEntity<Integer> getMaxScoreByCategory(@PathVariable Integer id, @PathVariable String category) {
+
+        Integer maxScore = testService.getMaxMarkOfTest(id);
+        return ResponseEntity.ok(maxScore);
+    }
+
+    @GetMapping("/{id}/getCategoriesOfTest")
+    public ResponseEntity<Set<String>> getCategoryOfTest(@PathVariable Integer id) {
+        Set<String> categories = testService.getCategoriesOfTest(id);
+        return ResponseEntity.ok(categories);
+    }
 
     // api luu ket qua va lua chon dap an nguoi dung khi lam bai test
-
 
     @PostMapping("/submitUserTestResult")
     public ResponseEntity<String> submitTestResult(@RequestBody TestAnswerRequest request) {
@@ -327,6 +333,48 @@ public class TestController {
             userTestAnswerRepository.save(answer);
         }
         return ResponseEntity.ok("Test submitted successfully!");
+    }
+
+    @GetMapping("/getTestHistory/{userId}")
+    public ResponseEntity<List<UserTestHistoryDTO>> getHistoryTest(@PathVariable Integer userId) {
+        List<UserTestAttempt> attempts = userTestAttempRepository.findByUserId(userId);
+        List<UserTestHistoryDTO> dtos = new ArrayList<>();
+        for (UserTestAttempt attempt : attempts) {
+            UserTestHistoryDTO dto = new UserTestHistoryDTO();
+            dto.setTestTitle(attempt.getTest().getTitle());
+            dto.setAttemptId(attempt.getId());
+            dto.setCompletedAt(attempt.getCompletedAt());
+            dto.setTotalScore(attempt.getTotalScore());
+            dto.setStartedAt(attempt.getStartedAt());
+            dtos.add(dto);
+        }
+        return ResponseEntity.ok(dtos);
+    }
+    @GetMapping("/getTestHistory/test_attempt/{id}")
+    public ResponseEntity<List<UserTestDetailDTO>> getUserTestDetail(@PathVariable Integer id) {
+        UserTestAttempt userTestAttempt = userTestAttempRepository.findById(id).
+                orElseThrow(() -> new RuntimeException("TestAttempt not found"));
+        List<UserTestAnswer> userTestAnswers = userTestAttempt.getAnswerItems();
+        List<UserTestDetailDTO> dtos = new ArrayList<>();
+        for (UserTestAnswer userTestAnswer : userTestAnswers) {
+            UserTestDetailDTO userTestDetailDTO = new UserTestDetailDTO();
+            List<TestOption> optionList = userTestAnswer.getQuestion().getOptions();
+            List<OptionDTO> optionDTOList = new ArrayList<>();
+            for (TestOption option : optionList) {
+                OptionDTO optionDTO = new OptionDTO();
+                optionDTO.setId(option.getId());
+                optionDTO.setOptionText(option.getOptionText());
+                optionDTO.setOptionOrder(option.getOptionOrder());
+                optionDTO.setScoreValue(option.getScoreValue());
+                optionDTOList.add(optionDTO);
+            }
+            userTestDetailDTO.setOptions(optionDTOList);
+            userTestDetailDTO.setQuestionText(userTestAnswer.getQuestion().getQuestionText());
+            userTestDetailDTO.setQuestionInstruction(userTestAnswer.getQuestion().getTest().getInstructions());
+            userTestDetailDTO.setSelectedOptionText(userTestAnswer.getSelectedOption().getOptionText());
+            dtos.add(userTestDetailDTO);
+        }
+        return ResponseEntity.ok(dtos);
     }
 
 }
