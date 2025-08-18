@@ -2,6 +2,7 @@ package fpt.aptech.trackmentalhealth.service.test;
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
 import jakarta.persistence.EntityNotFoundException;
@@ -183,9 +184,8 @@ public class TestServiceImp implements TestService {
     public void createFullTest(FullTestDTO dto) {
         Test test = new Test();
         if(dto.getTitle() != null){
-            test.setId(dto.getId().intValue());
+            test.setTitle(dto.getTitle());
         }
-        test.setTitle(dto.getTitle());
         test.setDescription(dto.getDescription());
         test.setInstructions(dto.getInstructions());
         test = testRepository.save(test);
@@ -322,6 +322,19 @@ public class TestServiceImp implements TestService {
     }
 
     @Override
+    public Integer getMaxMarkOfTestByCategory(Integer id, String category) {
+        Test test = getTest(id);
+        if (test.getQuestions() == null) return 0;
+        return test.getQuestions().stream().filter(q->q.getQuestionType().equals(category))
+                .mapToInt(q -> q.getOptions().stream()
+                        .mapToInt(opt -> opt.getScoreValue() != null ? opt.getScoreValue() : 0)
+                        .max()
+                        .orElse(0)
+                )
+                .sum();
+    }
+
+    @Override
     public List<TestResult> createMultipleTestResults(List<TestResult> testResults) {
         testResultRepository.saveAll(testResults);
         return testResults;
@@ -349,6 +362,22 @@ public class TestServiceImp implements TestService {
          return userTestAnswers;
     }
 
+    @Override
+    public List<UserTestAttempt> getHistoryAttempts(Integer userId) {
+        return userTestAttempRepository.findByUserId(userId);
+    }
+
+    @Override
+    public Set<String> getCategoriesOfTest(Integer testId) {
+        Test test = getTest(testId);
+        if (test.getQuestions() == null) return null;
+        Set<String> categories = new HashSet<>();
+        List<TestQuestion> testQuestions = test.getQuestions();
+        for (TestQuestion question : testQuestions) {
+            categories.add(question.getQuestionType());
+        }
+        return categories;
+    }
 
 
 }
