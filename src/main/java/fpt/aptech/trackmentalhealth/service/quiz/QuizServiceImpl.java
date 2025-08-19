@@ -17,6 +17,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -57,7 +58,7 @@ public class QuizServiceImpl implements QuizService {
         quizDetailDTO.setDescription(quiz.getDescription());
         quizDetailDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
         quizDetailDTO.setTimeLimit(quiz.getTimeLimit());
-        quizDetailDTO.setQuizQuestions(getQuestionsFromQuiz(quiz.getId()));
+        quizDetailDTO.setQuizQuestions(getRandomQuestionsFromQuiz(quiz.getId()));
         List<QuizResult> quizzesList = quiz.getQuizResults();
         List<QuizResultDTO> quizResultDTOList = new ArrayList<>();
         for (QuizResult quizResult : quizzesList) {
@@ -121,4 +122,27 @@ public class QuizServiceImpl implements QuizService {
         }
         return questionDTOList;
     }
+    @Override
+    public List<QuestionDTO> getRandomQuestionsFromQuiz(Integer quizId) {
+        Quiz quiz
+                = quizRepository.findById(quizId).orElseThrow();
+        Integer numberQuestionGetted = quiz.getNumberOfQuestions();
+        List<Question> questionList = quizQuestionRepository.getAllQuestionOfQuiz(quizId);
+
+        // Shuffle danh sách để lấy ngẫu nhiên
+        Collections.shuffle(questionList);
+
+        // Giới hạn số lượng câu hỏi trả về
+        int limit = Math.min(numberQuestionGetted, questionList.size());
+        List<Question> selectedQuestions = questionList.subList(0, limit);
+
+        List<QuestionDTO> questionDTOList = new ArrayList<>();
+        for (Question question : selectedQuestions) {
+            QuestionDTO questionDTO = ConvertDTOtoEntity.convertQuestionToQuestionDTO(question);
+            questionDTOList.add(questionDTO);
+        }
+        return questionDTOList;
+    }
+
+
 }
