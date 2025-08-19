@@ -48,37 +48,33 @@ public class OAuthController {
             String picture = (String) payload.get("picture");
 
             Users existingUser = loginRepository.findByEmail(email);
-            Users user;
 
             if (existingUser != null) {
                 if (existingUser.getPassword() != null && !existingUser.getPassword().isEmpty()) {
+                    // User có mật khẩu => đăng ký bằng form trước đó
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Email already exists, please login with password!");
+                            .body("Email already registered with password. Please login using email & password.");
+                } else {
+                    // User Google cũ, cho login tiếp
+                    return handleOAuthLogin(existingUser.getEmail(), existingUser.getFullname(), existingUser.getAvatar());
                 }
-                // Login tiếp tục với OAuth user
-                return handleOAuthLogin(existingUser.getEmail(), existingUser.getFullname(), existingUser.getAvatar());
             } else {
-                // Tạo user mới
+                // Chưa có user => tạo mới từ Google info
                 Role userRole = roleRepository.findByRoleName("USER")
                         .orElseThrow(() -> new RuntimeException("Default role USER not found"));
 
-                // Tạo password ngẫu nhiên
-                String randomPassword = UUID.randomUUID().toString();
-
-                // Băm password nếu bạn dùng Spring Security
-                String encodedPassword = passwordEncoder.encode(randomPassword);
-
-                user = new Users();
+                Users user = new Users();
                 user.setEmail(email);
                 user.setFullname(name);
                 user.setAvatar(picture);
                 user.setRoleId(userRole);
-                user.setPassword(encodedPassword);
-
+                user.setPassword(user.getPassword());
+                user.setIsApproved(true);
                 loginRepository.save(user);
+
+                return handleOAuthLogin(email, name, picture);
             }
 
-            return handleOAuthLogin(email, name, picture);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google OAuth failed: " + e.getMessage());
         }
