@@ -16,10 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,7 +55,7 @@ public class TestImportService {
                 errors.add("❌ Sheet 'Options' không đúng cấu trúc cột.");
             }
 
-            if (!checkHeader(workbook.getSheet("Results").getRow(0), List.of("TestTitle", "MinScore", "MaxScore", "ResultText"))) {
+            if (!checkHeader(workbook.getSheet("Results").getRow(0), List.of("TestTitle", "MinScore", "MaxScore", "ResultText", "Category"))) {
                 errors.add("❌ Sheet 'Results' không đúng cấu trúc cột.");
             }
 
@@ -98,7 +95,7 @@ public class TestImportService {
 
             try {
                 Sheet resultSheet = workbook.getSheet("Results");
-                saveResults(resultSheet, testMap, questionCountMap);
+                saveResults(resultSheet, testMap, questionCountMap, questionMap);
             } catch (IllegalArgumentException e) {
                 errors.addAll(List.of(e.getMessage().split("\n")));
                 throw new TestImportValidationException("Lỗi khi xử lý Sheet Results", errors);
@@ -235,12 +232,14 @@ public class TestImportService {
     }
 
     private void saveOptions(Sheet sheet, Map<String, TestQuestion> questionMap) {
-        Map<String, Map<Integer, Boolean>> orderCheck = new HashMap<>();
-        Map<String, Map<Integer, Boolean>> scoreCheck = new HashMap<>();
+        Map<String, Set<Integer>> orderCheck = new HashMap<>();
+        Map<String, Set<Integer>> scoreCheck = new HashMap<>();
         List<String> errors = new ArrayList<>();
 
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
+            if (row == null) continue;
+
             String questionText = row.getCell(0) != null ? row.getCell(0).getStringCellValue().trim() : "";
 
             if (!questionMap.containsKey(questionText)) {
@@ -251,20 +250,36 @@ public class TestImportService {
             int optionOrder = (int) row.getCell(3).getNumericCellValue();
             int score = (int) row.getCell(2).getNumericCellValue();
 
+            // Kiểm tra điểm số >= 0
+            if (score < 0) {
+                errors.add("❌ Dòng " + (i + 1) + ": Điểm số phải >= 0 trong câu hỏi '" + questionText + "'");
+            }
+
             // Kiểm tra trùng thứ tự đáp án trong cùng câu hỏi
-            orderCheck.putIfAbsent(questionText, new HashMap<>());
-            if (orderCheck.get(questionText).containsKey(optionOrder)) {
+            orderCheck.putIfAbsent(questionText, new HashSet<>());
+            if (!orderCheck.get(questionText).add(optionOrder)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Trùng thứ tự đáp án " + optionOrder + " trong câu hỏi '" + questionText + "'");
-            } else {
-                orderCheck.get(questionText).put(optionOrder, true);
             }
 
             // Kiểm tra trùng điểm số trong cùng câu hỏi
-            scoreCheck.putIfAbsent(questionText, new HashMap<>());
-            if (scoreCheck.get(questionText).containsKey(score)) {
+            scoreCheck.putIfAbsent(questionText, new HashSet<>());
+            if (!scoreCheck.get(questionText).add(score)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Trùng điểm số " + score + " trong câu hỏi '" + questionText + "'");
-            } else {
-                scoreCheck.get(questionText).put(score, true);
+            }
+        }
+
+        // Kiểm tra điểm số liên tiếp nhau cho từng câu hỏi
+        for (Map.Entry<String, Set<Integer>> entry : scoreCheck.entrySet()) {
+            String questionText = entry.getKey();
+            List<Integer> scores = new ArrayList<>(entry.getValue());
+            Collections.sort(scores);
+
+            for (int j = 1; j < scores.size(); j++) {
+                if (scores.get(j) != scores.get(j - 1) + 1) {
+                    errors.add("❌ Câu hỏi '" + questionText + "' có điểm số không liên tiếp: "
+                            + scores);
+                    break;
+                }
             }
         }
 
@@ -275,10 +290,13 @@ public class TestImportService {
         // Nếu không có lỗi, lưu thật
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
+            if (row == null) continue;
+
             String questionText = row.getCell(0).getStringCellValue().trim();
 
             TestOption opt = new TestOption();
             opt.setQuestion(questionMap.get(questionText));
+            questionMap.get(questionText).getOptions().add(opt);
             opt.setOptionText(row.getCell(1).getStringCellValue().trim());
             opt.setScoreValue((int) row.getCell(2).getNumericCellValue());
             opt.setOptionOrder((int) row.getCell(3).getNumericCellValue());
@@ -287,15 +305,35 @@ public class TestImportService {
         }
     }
 
-
-    private void saveResults(Sheet sheet, Map<String, Test> testMap, Map<String, Long> questionCountMap) {
+    private void saveResults(Sheet sheet,
+                             Map<String, Test> testMap,
+                             Map<String, Long> questionCountMap,
+                             Map<String, TestQuestion> questionMap) {
         List<String> errors = new ArrayList<>();
-        Map<String, List<int[]>> testRanges = new HashMap<>();
+        // Map<TestTitle, Map<Category, List<int[]>>>
+        Map<String, Map<String, List<int[]>>> testCategoryRanges = new HashMap<>();
+
+        // build map: testTitle -> (category -> maxScore có thể đạt)
+        Map<String, Map<String, Integer>> testCategoryMaxScores = new HashMap<>();
+        for (TestQuestion q : questionMap.values()) {
+            String testTitle = q.getTest().getTitle();
+            String category = q.getQuestionType();
+            int maxOptionScore = q.getOptions()
+                    .stream()
+                    .mapToInt(TestOption::getScoreValue)
+                    .max()
+                    .orElse(0);
+
+            testCategoryMaxScores
+                    .computeIfAbsent(testTitle, k -> new HashMap<>())
+                    .merge(category, maxOptionScore, Integer::sum);
+        }
 
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
-            String testTitle = row.getCell(0).getStringCellValue().trim();
+            if (row == null) continue;
 
+            String testTitle = row.getCell(0).getStringCellValue().trim();
             if (!testMap.containsKey(testTitle)) {
                 errors.add("❌ Dòng " + (i + 1) + ": Test '" + testTitle + "' không tồn tại.");
                 continue;
@@ -303,54 +341,108 @@ public class TestImportService {
 
             int min = (int) row.getCell(1).getNumericCellValue();
             int max = (int) row.getCell(2).getNumericCellValue();
-            int maxPossible = (int) (questionCountMap.getOrDefault(testTitle, 0L) * 4);
+            String category = row.getCell(4).getStringCellValue().trim();
 
+            // lấy maxScore thực sự của category này
+            int maxPossible = testCategoryMaxScores
+                    .getOrDefault(testTitle, new HashMap<>())
+                    .getOrDefault(category, 0);
+
+            // validate score
             if (min < 0) {
                 errors.add("❌ Dòng " + (i + 1) + ": minScore phải >= 0.");
             }
-
             if (max > maxPossible) {
-                errors.add("❌ Dòng " + (i + 1) + ": maxScore phải < " + maxPossible + " (4 điểm * số câu hỏi).");
+                errors.add("❌ Dòng " + (i + 1) + ": maxScore phải <= " + maxPossible +
+                        " (tổng điểm tối đa của các câu hỏi trong category).");
             }
-
             if (min > max) {
                 errors.add("❌ Dòng " + (i + 1) + ": minScore không được lớn hơn maxScore.");
             }
 
-            // Kiểm tra trùng khoảng
-            testRanges.putIfAbsent(testTitle, new ArrayList<>());
-            for (int[] existingRange : testRanges.get(testTitle)) {
+            // validate category tồn tại trong test
+            List<String> allowedCategories = questionMap.values().stream()
+                    .filter(q -> q.getTest().getTitle().equals(testTitle))
+                    .map(TestQuestion::getQuestionType)
+                    .distinct()
+                    .toList();
+            if (!allowedCategories.contains(category)) {
+                errors.add("❌ Dòng " + (i + 1) + ": Category '" + category
+                        + "' không hợp lệ. Phải thuộc questionType của test '" + testTitle + "'");
+            }
+
+            // kiểm tra trùng khoảng theo từng test + category
+            testCategoryRanges
+                    .computeIfAbsent(testTitle, k -> new HashMap<>())
+                    .computeIfAbsent(category, k -> new ArrayList<>());
+
+            List<int[]> ranges = testCategoryRanges.get(testTitle).get(category);
+            for (int[] existingRange : ranges) {
                 int existingMin = existingRange[0];
                 int existingMax = existingRange[1];
                 if (!(max < existingMin || min > existingMax)) {
-                    errors.add("❌ Dòng " + (i + 1) + ": khoảng điểm (" + min + "-" + max + ") bị trùng với khoảng (" + existingMin + "-" + existingMax + ") trong test '" + testTitle + "'");
+                    errors.add("❌ Dòng " + (i + 1) + ": khoảng điểm (" + min + "-" + max
+                            + ") bị trùng với khoảng (" + existingMin + "-" + existingMax
+                            + ") trong test '" + testTitle + "', category '" + category + "'");
                     break;
                 }
             }
+            ranges.add(new int[]{min, max});
+            ranges.sort((a, b) -> Integer.compare(a[0], b[0]));
 
-            testRanges.get(testTitle).add(new int[]{min, max});
-            testRanges.get(testTitle).sort((a, b) -> Integer.compare(a[0], b[0]));
-
-// Kiểm tra nối tiếp nhau
-            List<int[]> ranges = testRanges.get(testTitle);
+            // kiểm tra liên tục
             for (int j = 1; j < ranges.size(); j++) {
                 int[] prev = ranges.get(j - 1);
                 int[] curr = ranges.get(j);
                 if (curr[0] != prev[1] + 1) {
-                    errors.add("❌ Test '" + testTitle + "' có khoảng điểm không liên tiếp giữa (" +
+                    errors.add("❌ Test '" + testTitle + "', category '" + category +
+                            "' có khoảng điểm không liên tiếp giữa (" +
                             prev[0] + "-" + prev[1] + ") và (" + curr[0] + "-" + curr[1] + ")");
                 }
             }
-
+            // Kiểm tra bắt đầu từ 0 và kết thúc bằng maxScore'
         }
+        // Kiểm tra bắt đầu từ 0 và kết thúc bằng maxScore cho từng test + category
+        for (Map.Entry<String, Map<String, List<int[]>>> testEntry : testCategoryRanges.entrySet()) {
+            String testTitle = testEntry.getKey();
+            for (Map.Entry<String, List<int[]>> catEntry : testEntry.getValue().entrySet()) {
+                String category = catEntry.getKey();
+                List<int[]> ranges = catEntry.getValue();
+                ranges.sort((a, b) -> Integer.compare(a[0], b[0]));
+
+                if (ranges.isEmpty()) continue;
+
+                // Lấy min đầu tiên và max cuối cùng
+                int firstMin = ranges.get(0)[0];
+                int lastMax = ranges.get(ranges.size() - 1)[1];
+
+                // Lấy maxScore thực sự của category này
+                int maxPossible = testCategoryMaxScores
+                        .getOrDefault(testTitle, new HashMap<>())
+                        .getOrDefault(category, 0);
+
+                if (firstMin != 0) {
+                    errors.add("❌ Test '" + testTitle + "', category '" + category +
+                            "' phải bắt đầu từ 0, hiện là " + firstMin);
+                }
+                if (lastMax != maxPossible) {
+                    errors.add("❌ Test '" + testTitle + "', category '" + category +
+                            "' phải kết thúc bằng maxScore " + maxPossible + ", hiện là " + lastMax);
+                }
+            }
+        }
+
 
         if (!errors.isEmpty()) {
             throw new IllegalArgumentException(String.join("\n", errors));
         }
 
-        // Nếu không có lỗi thì lưu kết quả
+
+        // Lưu dữ liệu
         for (int i = 1; i <= sheet.getLastRowNum(); i++) {
             Row row = sheet.getRow(i);
+            if (row == null) continue;
+
             String testTitle = row.getCell(0).getStringCellValue().trim();
 
             TestResult result = new TestResult();
@@ -358,8 +450,19 @@ public class TestImportService {
             result.setMinScore((int) row.getCell(1).getNumericCellValue());
             result.setMaxScore((int) row.getCell(2).getNumericCellValue());
             result.setResultText(row.getCell(3).getStringCellValue().trim());
+            result.setCategory(row.getCell(4).getStringCellValue().trim()); // thêm category
 
             testService.createTestResult(result);
+        }
+        Integer minScoreCurrent = 0;
+        Integer maxScoreCurrent = 0;
+        for (int i = 1; i <= sheet.getLastRowNum(); i++) {
+            Row row = sheet.getRow(i);
+            if ((int) row.getCell(1).getNumericCellValue() < minScoreCurrent) {
+                minScoreCurrent = (int) row.getCell(1).getNumericCellValue();
+            }
+            if (row == null) continue;
+
         }
     }
 
