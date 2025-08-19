@@ -13,6 +13,6 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserQuizAnswerItemId implements Serializable {
-    private Integer attemptId;
+    private Integer attemptId; // LAN THU N LAM BAI
     private Integer questionId;
 }

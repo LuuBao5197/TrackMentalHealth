@@ -51,12 +51,7 @@ public class OAuthController {
             Users user;
 
             if (existingUser != null) {
-                if (existingUser.getPassword() != null && !existingUser.getPassword().isEmpty()) {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Email already exists, please login with password");
-                }
-                // Login tiếp tục với OAuth user
-                return handleOAuthLogin(existingUser.getEmail(), existingUser.getFullname(), existingUser.getAvatar());
+                user = existingUser; // đăng nhập user cũ
             } else {
                 // Tạo user mới
                 Role userRole = roleRepository.findByRoleName("USER")
@@ -119,13 +114,13 @@ public class OAuthController {
             user = new Users();
             user.setEmail(email);
             user.setFullname(name);
-            user.setUsername(email);
+            user.setUsername(email); // Hoặc custom
             user.setIsApproved(true);
             user.setAvatar(avatarUrl);
 
             // Set default role
-            Role role = roleRepository.findByRoleName("USER")
-                    .orElseThrow(() -> new RuntimeException("Default role USER not found"));
+            Role role = new Role();
+            role.setId(1); // ROLE_USER
             user.setRoleId(role);
 
             loginRepository.save(user);
@@ -134,18 +129,13 @@ public class OAuthController {
         // Generate JWT
         String jwt = jwtUtils.generateToken(email, user, null);
 
-        Map<String, Object> userData = new HashMap<>();
-        userData.put("id", user.getId());
-        userData.put("fullname", user.getFullname());
-        userData.put("email", user.getEmail());
-        userData.put("avatar", user.getAvatar());
-        userData.put("role", user.getRoleId().getRoleName());
-
         Map<String, Object> result = new HashMap<>();
         result.put("token", jwt);
-        result.put("user", userData);
+        result.put("userId", user.getId());
+        result.put("role", user.getRoleId().getRoleName());
+        result.put("fullname", user.getFullname());
+        result.put("avatar", user.getAvatar());
 
         return ResponseEntity.ok(result);
     }
-
 }

@@ -54,11 +54,6 @@ public class Users {
 
     @Size(max = 255)
     @Nationalized
-    @Column(name = "faceEmbedding", columnDefinition = "TEXT")
-    private String faceEmbedding;
-
-    @Size(max = 255)
-    @Nationalized
     @Column(name = "avatar")
     private String avatar;
 
