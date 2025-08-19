@@ -16,4 +16,5 @@ public class UserTestDetailDTO {
     private List<OptionDTO> options;
     private String selectedOptionText;
     private Integer scoreValue;
+//    private String resultLabel;
 }

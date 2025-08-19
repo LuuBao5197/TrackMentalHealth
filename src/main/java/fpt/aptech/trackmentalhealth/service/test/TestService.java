@@ -1,10 +1,12 @@
 package fpt.aptech.trackmentalhealth.service.test;
 
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
+import fpt.aptech.trackmentalhealth.dto.test.TestAnswerRequest;
 import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Set;
@@ -53,4 +55,6 @@ public interface TestService {
     List<UserTestAttempt> getHistoryAttempts(Integer userId);
 
     Set<String> getCategoriesOfTest(Integer testId);
+    public TestResult getResultByDomainAndScore(String domainName, Integer score, Test test);
+    public String submitTestResult(@RequestBody TestAnswerRequest request);
 }

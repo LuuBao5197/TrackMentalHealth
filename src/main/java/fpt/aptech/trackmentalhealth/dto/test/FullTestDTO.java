@@ -3,6 +3,8 @@ package fpt.aptech.trackmentalhealth.dto.test;
 import lombok.Data;
 
 import java.util.List;
+import java.util.Set;
+
 @Data
 public class FullTestDTO {
     private Long id; // null nếu là create
