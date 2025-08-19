@@ -4,6 +4,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.List;
 
 @Data
 @AllArgsConstructor
@@ -14,4 +15,6 @@ public class UserTestHistoryDTO {
     private Instant startedAt;
     private Instant completedAt;
     private Integer totalScore;
+    private String resultLabel;
+    private List<UserTestDetailDTO> detailDTOList;
 }
