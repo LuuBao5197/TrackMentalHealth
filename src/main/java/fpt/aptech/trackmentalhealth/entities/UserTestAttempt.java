@@ -40,6 +40,9 @@ public class UserTestAttempt {
     private String resultSummary;
 
     @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTestDomainResult> domainResults = new ArrayList<>();
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<UserTestAnswer> answerItems;
 
 }
