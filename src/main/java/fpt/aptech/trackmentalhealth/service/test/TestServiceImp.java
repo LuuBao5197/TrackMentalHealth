@@ -398,7 +398,9 @@ public class TestServiceImp implements TestService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Test test = testRepository.findById(request.getTestId())
                 .orElseThrow(() -> new RuntimeException("Test not found"));
+
         StringBuilder labelResult = new StringBuilder("Result of test: " + test.getTitle() + ": ");
+
         // 2. Tạo UserTestAttempt
         UserTestAttempt attempt = new UserTestAttempt();
         attempt.setUsers(user);
@@ -406,46 +408,51 @@ public class TestServiceImp implements TestService {
         attempt.setStartedAt(Instant.now());
         attempt.setCompletedAt(Instant.now());
         attempt.setResultSummary(request.getResult());
+        attempt.setTotalScore(0);
 
-        // Gom điểm theo domain
+        // Lưu để có attemptId
+        attempt = saveUserTestAttempt(attempt);
+
+        // 3. Tính điểm theo domain
         Map<String, Integer> domainScores = new HashMap<>();
         int totalScore = 0;
 
         for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
-            TestQuestion question = getTestQuestion(ans.getQuestionId());
-            String domain = question.getQuestionType();
+            TestQuestion question = testQuestionRepository.findById(ans.getQuestionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid question ID"));
 
             TestOption selected = testOptionRepository.findById(ans.getSelectedOptionId())
-                    .orElseThrow(() -> new RuntimeException("Invalid option ID: " + ans.getSelectedOptionId()));
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID"));
 
             int score = selected.getScoreValue();
             totalScore += score;
 
-            // Cộng dồn vào domain tương ứng
-            domainScores.merge(domain, score, Integer::sum);
+            domainScores.merge(question.getQuestionType(), score, Integer::sum);
         }
-
         attempt.setTotalScore(totalScore);
-        // 3. Lưu UserTestAttempt (cascade sẽ lưu luôn domainResults)
-        saveUserTestAttempt(attempt);
-        // 4. Tạo danh sách UserTestDomainResult
+
+        // 4. Lưu domain results
         List<UserTestDomainResult> domainResults = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : domainScores.entrySet()) {
             String domain = entry.getKey();
             Integer score = entry.getValue();
+
             UserTestDomainResult domainResult = new UserTestDomainResult();
             domainResult.setAttempt(attempt);
             domainResult.setDomainName(domain);
             domainResult.setScore(score);
-            // gọi service để lấy kết quả phân loại
+
+            // phân loại kết quả
             TestResult matchedResult = getResultByDomainAndScore(domain, score, test);
             domainResult.setResultText(matchedResult.getResultText());
+
             labelResult.append(" ").append(matchedResult.getResultText()).append(",");
             domainResults.add(domainResult);
         }
-        attempt.setDomainResults(domainResults);
+        attempt.getDomainResults().clear();
+        attempt.getDomainResults().addAll(domainResults);
 
-        // 5. Lưu từng UserTestAnswer
+        // 5. Lưu từng UserTestAnswer (mapping mới)
         for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
             UserTestAnswer answer = new UserTestAnswer();
 
@@ -455,6 +462,7 @@ public class TestServiceImp implements TestService {
             id.setSelectedOptionId(ans.getSelectedOptionId());
             answer.setId(id);
 
+            // set quan hệ theo @MapsId
             answer.setAttempt(attempt);
             answer.setQuestion(testQuestionRepository.findById(ans.getQuestionId())
                     .orElseThrow(() -> new RuntimeException("Invalid question ID")));
