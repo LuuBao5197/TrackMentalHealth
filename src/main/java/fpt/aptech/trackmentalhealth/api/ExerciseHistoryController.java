@@ -29,11 +29,11 @@ public class ExerciseHistoryController {
             int exerciseId = (int) payload.get("exerciseId");
             String status = (String) payload.get("status"); // "success" | "fail"
             Integer score = payload.get("score") != null ? (Integer) payload.get("score") : null;
-            String feedback = (String) payload.getOrDefault("feedback", null);
+            String title = (String) payload.getOrDefault("title", null);
             String difficultyLevel = (String) payload.getOrDefault("difficultyLevel", null);
 
             exerciseHistoryService.saveExerciseHistory(
-                    userId, exerciseId, status, score, feedback, difficultyLevel
+                    userId, exerciseId, status, score, title, difficultyLevel
             );
             return ResponseEntity.ok("Exercise history saved successfully");
         } catch (Exception e) {
@@ -53,9 +53,9 @@ public class ExerciseHistoryController {
                 .map(h -> new ExerciseHistoryDto(
                         h.getId(),
                         h.getExercise().getId(),
+                        h.getTitle(),
                         h.getStatus(),
                         h.getScore(),
-                        h.getFeedback(),
                         h.getDifficultyLevel()
                 ))
                 .toList();

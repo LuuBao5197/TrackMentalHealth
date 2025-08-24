@@ -9,8 +9,8 @@ import java.time.LocalDateTime;
 public class ExerciseHistoryDto {
     private Long id;
     private Integer exerciseId;
+    private String title;
     private String status;
     private Integer score;
-    private String feedback;
     private String difficultyLevel;
 }

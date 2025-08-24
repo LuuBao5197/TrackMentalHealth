@@ -23,7 +23,7 @@ public class ExerciseHistoryService {
     @Autowired
     private UserRepository userRepository;
 
-    public void saveExerciseHistory(int userId, int exerciseId, String status, Integer score, String feedback, String difficultyLevel) {
+    public void saveExerciseHistory(int userId, int exerciseId, String status, Integer score, String title, String difficultyLevel) {
         Users user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
         Exercise exercise = exerciseRepository.findById(exerciseId)
@@ -35,7 +35,7 @@ public class ExerciseHistoryService {
                 .completedAt(LocalDateTime.now())
                 .status(status)
                 .score(score)
-                .feedback(feedback)
+                .title(title)
                 .difficultyLevel(difficultyLevel)
                 .build();
 

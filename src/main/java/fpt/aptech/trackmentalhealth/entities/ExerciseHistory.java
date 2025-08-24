@@ -25,14 +25,14 @@ public class ExerciseHistory {
     @JoinColumn(name = "exercise_id")
     private Exercise exercise; // Liên kết với bài tập
 
+    private String title;
+
     @Column(name = "completed_at")
     private LocalDateTime completedAt; // Thời gian hoàn thành
 
     private String status; // VD: COMPLETED, FAILED, IN_PROGRESS
 
     private Integer score; // Điểm số (nếu có hệ thống chấm điểm)
-
-    private String feedback; // Phản hồi từ hệ thống (nếu có)
 
     @Column(name = "difficulty_level")
     private String difficultyLevel; // Độ khó của bài tập khi thực hiện
