@@ -407,7 +407,7 @@ public class TestServiceImp implements TestService {
         attempt.setTest(test);
         attempt.setStartedAt(Instant.now());
         attempt.setCompletedAt(Instant.now());
-        attempt.setResultSummary(request.getResult());
+//        attempt.setResultSummary(request.getResult());
         attempt.setTotalScore(0);
 
         // Lưu để có attemptId
@@ -471,7 +471,8 @@ public class TestServiceImp implements TestService {
 
             userTestAnswerRepository.save(answer);
         }
-
+        attempt.setResultSummary(labelResult.toString());
+        userTestAttempRepository.save(attempt);
         return labelResult.toString();
     }
 
