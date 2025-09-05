@@ -2,15 +2,21 @@ package fpt.aptech.trackmentalhealth.service.test;
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
+import fpt.aptech.trackmentalhealth.dto.test.TestAnswerRequest;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
+import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestBody;
 
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,16 +28,19 @@ public class TestServiceImp implements TestService {
     TestRepository testRepository;
     UserTestAttempRepository userTestAttempRepository;
     UserTestAnswerRepository userTestAnswerRepository;
+    UserRepository userRepository;
 
     public TestServiceImp(TestOptionRepository testOptionRepository, TestResultRepository testResultRepository,
                           TestQuestionRepository testQuestionRepository, TestRepository testRepository,
-                          UserTestAttempRepository userTestAttempRepository, UserTestAnswerRepository userTestAnswerRepository) {
+                          UserTestAttempRepository userTestAttempRepository, UserTestAnswerRepository userTestAnswerRepository,
+                          UserRepository userRepository) {
         this.testOptionRepository = testOptionRepository;
         this.testResultRepository = testResultRepository;
         this.testQuestionRepository = testQuestionRepository;
         this.testRepository = testRepository;
         this.userTestAttempRepository = userTestAttempRepository;
         this.userTestAnswerRepository = userTestAnswerRepository;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -45,7 +54,7 @@ public class TestServiceImp implements TestService {
             fullTestDTO.setTitle(test.getTitle());
             fullTestDTO.setDescription(test.getDescription());
             fullTestDTO.setInstructions(test.getInstructions());
-            fullTestDTO.setHasResult(test.getResults() != null);
+            fullTestDTO.setHasResult(!test.getResults().isEmpty());
             fullTestDTOList.add(fullTestDTO);
         }
         Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
@@ -63,7 +72,7 @@ public class TestServiceImp implements TestService {
             fullTestDTO.setTitle(test.getTitle());
             fullTestDTO.setDescription(test.getDescription());
             fullTestDTO.setInstructions(test.getInstructions());
-            fullTestDTO.setHasResult(test.getResults() != null);
+            fullTestDTO.setHasResult(!test.getResults().isEmpty());
             fullTestDTOList.add(fullTestDTO);
         }
         Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
@@ -183,9 +192,8 @@ public class TestServiceImp implements TestService {
     public void createFullTest(FullTestDTO dto) {
         Test test = new Test();
         if(dto.getTitle() != null){
-            test.setId(dto.getId().intValue());
+            test.setTitle(dto.getTitle());
         }
-        test.setTitle(dto.getTitle());
         test.setDescription(dto.getDescription());
         test.setInstructions(dto.getInstructions());
         test = testRepository.save(test);
@@ -322,6 +330,19 @@ public class TestServiceImp implements TestService {
     }
 
     @Override
+    public Integer getMaxMarkOfTestByCategory(Integer id, String category) {
+        Test test = getTest(id);
+        if (test.getQuestions() == null) return 0;
+        return test.getQuestions().stream().filter(q->q.getQuestionType().equalsIgnoreCase(category))
+                .mapToInt(q -> q.getOptions().stream()
+                        .mapToInt(opt -> opt.getScoreValue() != null ? opt.getScoreValue() : 0)
+                        .max()
+                        .orElse(0)
+                )
+                .sum();
+    }
+
+    @Override
     public List<TestResult> createMultipleTestResults(List<TestResult> testResults) {
         testResultRepository.saveAll(testResults);
         return testResults;
@@ -349,6 +370,101 @@ public class TestServiceImp implements TestService {
          return userTestAnswers;
     }
 
+    @Override
+    public List<UserTestAttempt> getHistoryAttempts(Integer userId) {
+        return userTestAttempRepository.findByUserId(userId);
+    }
 
+    @Override
+    public Set<String> getCategoriesOfTest(Integer testId) {
+        Test test = getTest(testId);
+        if (test.getQuestions() == null) return null;
+        Set<String> categories = new HashSet<>();
+        List<TestQuestion> testQuestions = test.getQuestions();
+        for (TestQuestion question : testQuestions) {
+            categories.add(question.getQuestionType());
+        }
+        return categories;
+    }
+    public TestResult getResultByDomainAndScore(String domainName, Integer score, Test test) {
+        return testResultRepository.findByTestAndCategoryAndScore(test.getId(), domainName, score)
+                .orElseThrow(() -> new RuntimeException(
+                        "No result found for domain: " + domainName + " with score: " + score));
+    }
+    @Transactional
+    public String submitTestResult(@RequestBody TestAnswerRequest request) {
+        // 1. Tìm người dùng và bài test
+        Users user = userRepository.findById(request.getUserId())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+        Test test = testRepository.findById(request.getTestId())
+                .orElseThrow(() -> new RuntimeException("Test not found"));
+        StringBuilder labelResult = new StringBuilder("Result of test: " + test.getTitle() + ": ");
+        // 2. Tạo UserTestAttempt
+        UserTestAttempt attempt = new UserTestAttempt();
+        attempt.setUsers(user);
+        attempt.setTest(test);
+        attempt.setStartedAt(Instant.now());
+        attempt.setCompletedAt(Instant.now());
+        attempt.setResultSummary(request.getResult());
+
+        // Gom điểm theo domain
+        Map<String, Integer> domainScores = new HashMap<>();
+        int totalScore = 0;
+
+        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
+            TestQuestion question = getTestQuestion(ans.getQuestionId());
+            String domain = question.getQuestionType();
+
+            TestOption selected = testOptionRepository.findById(ans.getSelectedOptionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID: " + ans.getSelectedOptionId()));
+
+            int score = selected.getScoreValue();
+            totalScore += score;
+
+            // Cộng dồn vào domain tương ứng
+            domainScores.merge(domain, score, Integer::sum);
+        }
+
+        attempt.setTotalScore(totalScore);
+        // 3. Lưu UserTestAttempt (cascade sẽ lưu luôn domainResults)
+        saveUserTestAttempt(attempt);
+        // 4. Tạo danh sách UserTestDomainResult
+        List<UserTestDomainResult> domainResults = new ArrayList<>();
+        for (Map.Entry<String, Integer> entry : domainScores.entrySet()) {
+            String domain = entry.getKey();
+            Integer score = entry.getValue();
+            UserTestDomainResult domainResult = new UserTestDomainResult();
+            domainResult.setAttempt(attempt);
+            domainResult.setDomainName(domain);
+            domainResult.setScore(score);
+            // gọi service để lấy kết quả phân loại
+            TestResult matchedResult = getResultByDomainAndScore(domain, score, test);
+            domainResult.setResultText(matchedResult.getResultText());
+            labelResult.append(" ").append(matchedResult.getResultText()).append(",");
+            domainResults.add(domainResult);
+        }
+        attempt.setDomainResults(domainResults);
+
+        // 5. Lưu từng UserTestAnswer
+        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
+            UserTestAnswer answer = new UserTestAnswer();
+
+            UserTestAnswerId id = new UserTestAnswerId();
+            id.setAttemptId(attempt.getId());
+            id.setQuestionId(ans.getQuestionId());
+            id.setSelectedOptionId(ans.getSelectedOptionId());
+            answer.setId(id);
+
+            answer.setAttempt(attempt);
+            answer.setQuestion(testQuestionRepository.findById(ans.getQuestionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid question ID")));
+            answer.setSelectedOption(testOptionRepository.findById(ans.getSelectedOptionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID")));
+
+            userTestAnswerRepository.save(answer);
+        }
+
+        return labelResult.toString();
+    }
 
 }

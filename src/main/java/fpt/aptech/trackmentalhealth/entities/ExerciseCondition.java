@@ -17,11 +17,14 @@ public class ExerciseCondition {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type;
+    private String type; // VD: LEFT_HAND_UP, RIGHT_HAND_UP
 
-    private String description;
+    private String description; // VD: Raise your left hand for 4 seconds
 
-    private String duration;
+    private String duration; // Số giây hoặc thời gian thực hiện
+
+    @Column(name = "step_order")
+    private Integer stepOrder; // Bước số mấy
 
     @ManyToOne
     @JoinColumn(name = "exercise_id")

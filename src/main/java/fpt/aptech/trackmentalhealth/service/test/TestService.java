@@ -1,11 +1,15 @@
 package fpt.aptech.trackmentalhealth.service.test;
 
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
+import fpt.aptech.trackmentalhealth.dto.test.TestAnswerRequest;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
+import java.util.Set;
 
 public interface TestService {
     // Business logic cua Test
@@ -39,6 +43,8 @@ public interface TestService {
 
     // Ham lay diem toi da cua 1 bai test
     Integer getMaxMarkOfTest(Integer id);
+    public Integer getMaxMarkOfTestByCategory(Integer id, String category);
+
     List<TestResult> createMultipleTestResults(List<TestResult> testResults);
 
     // Cac phuong thuc lien quan den viec luu tru ket qua nguoi dung lam bai Test
@@ -46,5 +52,9 @@ public interface TestService {
     UserTestAttempt saveUserTestAttempt(UserTestAttempt userTestAttempt);
     UserTestAnswer getUserTestAnswer(Integer userId, Integer testId);
     List<UserTestAnswer> saveUserTestAnswer(List<UserTestAnswer> userTestAnswers);
+    List<UserTestAttempt> getHistoryAttempts(Integer userId);
 
+    Set<String> getCategoriesOfTest(Integer testId);
+    public TestResult getResultByDomainAndScore(String domainName, Integer score, Test test);
+    public String submitTestResult(@RequestBody TestAnswerRequest request);
 }

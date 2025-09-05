@@ -8,7 +8,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @Entity
-@Table(name = "TestResults",  uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "min_score", "max_score"}))
+@Table(name = "TestResults",  uniqueConstraints = @UniqueConstraint(columnNames = {"test_id", "min_score", "max_score", "category"}))
 public class TestResult {
     @Id
     @Column(name = "id", nullable = false)
@@ -25,6 +25,9 @@ public class TestResult {
 
     @Column(name = "max_score")
     private Integer maxScore;
+
+    @Column(name = "category", columnDefinition = "NVARCHAR(MAX)")
+    private String category; // danh cho cac bai test nhu DASS-21
 
     @Lob
     @Column(name = "result_text", columnDefinition = "NVARCHAR(MAX)")

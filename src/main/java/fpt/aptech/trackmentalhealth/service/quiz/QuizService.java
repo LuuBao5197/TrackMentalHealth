@@ -16,4 +16,5 @@ public interface QuizService {
     Quiz assignQuestionsToQuiz(Integer quizId, List<Integer> questionIds);
     Page<QuizDTO> searchQuizzes(String keyword, Pageable pageable);
     List<QuestionDTO> getQuestionsFromQuiz(Integer quizId);
+    public List<QuestionDTO> getRandomQuestionsFromQuiz(Integer quizId);
 }

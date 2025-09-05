@@ -8,4 +8,7 @@ import java.util.List;
 
 public interface ExerciseConditionRepository extends JpaRepository<ExerciseCondition, Long> {
     List<ExerciseCondition> findByExercise(Exercise exercise);
+
+    List<ExerciseCondition> findByExerciseOrderByStepOrderAsc(Exercise exercise);
 }
+
