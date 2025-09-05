@@ -39,6 +39,11 @@ public class OAuthController {
             String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
             Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
 
+            String aud = (String) payload.get("aud");
+            if (!"713857311495-mvg33eppl0s6rjiju5chh0rt02ho0ltb.apps.googleusercontent.com".equals(aud)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid audience");
+            }
+
             if (payload == null || !payload.containsKey("email")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
             }
