@@ -1,4 +1,5 @@
 package fpt.aptech.trackmentalhealth.service.test;
+import fpt.aptech.trackmentalhealth.configs.RedisCacheService;
 import fpt.aptech.trackmentalhealth.dto.test.FullTestDTO;
 import fpt.aptech.trackmentalhealth.dto.test.OptionDTO;
 import fpt.aptech.trackmentalhealth.dto.test.QuestionDTO;
@@ -8,6 +9,9 @@ import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -29,11 +33,12 @@ public class TestServiceImp implements TestService {
     UserTestAttempRepository userTestAttempRepository;
     UserTestAnswerRepository userTestAnswerRepository;
     UserRepository userRepository;
+    RedisCacheService redisCacheService;
 
     public TestServiceImp(TestOptionRepository testOptionRepository, TestResultRepository testResultRepository,
                           TestQuestionRepository testQuestionRepository, TestRepository testRepository,
                           UserTestAttempRepository userTestAttempRepository, UserTestAnswerRepository userTestAnswerRepository,
-                          UserRepository userRepository) {
+                          UserRepository userRepository, RedisCacheService redisCacheService) {
         this.testOptionRepository = testOptionRepository;
         this.testResultRepository = testResultRepository;
         this.testQuestionRepository = testQuestionRepository;
@@ -41,47 +46,73 @@ public class TestServiceImp implements TestService {
         this.userTestAttempRepository = userTestAttempRepository;
         this.userTestAnswerRepository = userTestAnswerRepository;
         this.userRepository = userRepository;
+        this.redisCacheService =  redisCacheService;
     }
 
+
+
     @Override
+//    @Cacheable(
+//            value = "tests",
+//            key = "'page=' + #pageable.pageNumber + ',size=' + #pageable.pageSize"
+//    )
     public Page<FullTestDTO> getTests(Pageable pageable) {
-        Page<Test> testPage = testRepository.findAll(pageable);
-        List<Test> testsList = testPage.getContent();
-        List<FullTestDTO> fullTestDTOList = new ArrayList<>();
-        for (Test test : testsList) {
-            FullTestDTO fullTestDTO = new FullTestDTO();
-            fullTestDTO.setId(Long.valueOf(test.getId()));
-            fullTestDTO.setTitle(test.getTitle());
-            fullTestDTO.setDescription(test.getDescription());
-            fullTestDTO.setInstructions(test.getInstructions());
-            fullTestDTO.setHasResult(!test.getResults().isEmpty());
-            fullTestDTOList.add(fullTestDTO);
-        }
-        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
-        return fullTestDTOPage;
+       String cacheKey = "page=" + pageable.getPageNumber() + ",size=" + pageable.getPageSize();
+       return redisCacheService.get("tests", cacheKey, ()-> {
+           System.out.println(">>> Query DB getTests");
+           Page<Test> testPage = testRepository.findAll(pageable);
+           List<Test> testsList = testPage.getContent();
+           List<FullTestDTO> fullTestDTOList = new ArrayList<>();
+           for (Test test : testsList) {
+               FullTestDTO fullTestDTO = new FullTestDTO();
+               fullTestDTO.setId(Long.valueOf(test.getId()));
+               fullTestDTO.setTitle(test.getTitle());
+               fullTestDTO.setDescription(test.getDescription());
+               fullTestDTO.setInstructions(test.getInstructions());
+               fullTestDTO.setHasResult(!test.getResults().isEmpty());
+               fullTestDTOList.add(fullTestDTO);
+           }
+           Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
+           return fullTestDTOPage;
+       });
     }
 
     @Override
+//    @Cacheable(
+//            value = "tests",
+//            key = "'page=' + #pageable.pageNumber + ',size=' + #pageable.pageSize + ',search=' + #keyword"
+//    )
     public Page<FullTestDTO> searchTests(String keyword, Pageable pageable) {
-        Page<Test> testPage = testRepository.searchTestByName(keyword, pageable);
-        List<Test> testsList = testPage.getContent();
-        List<FullTestDTO> fullTestDTOList = new ArrayList<>();
-        for (Test test : testsList) {
-            FullTestDTO fullTestDTO = new FullTestDTO();
-            fullTestDTO.setId(Long.valueOf(test.getId()));
-            fullTestDTO.setTitle(test.getTitle());
-            fullTestDTO.setDescription(test.getDescription());
-            fullTestDTO.setInstructions(test.getInstructions());
-            fullTestDTO.setHasResult(!test.getResults().isEmpty());
-            fullTestDTOList.add(fullTestDTO);
-        }
-        Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
-        return fullTestDTOPage;
+        String cacheKey = "page=" + pageable.getPageNumber() +
+                ",size=" + pageable.getPageSize() +
+                ",search=" + keyword;
+
+        return redisCacheService.get("tests", cacheKey, () -> {
+            Page<Test> testPage = testRepository.searchTestByName(keyword, pageable);
+            List<Test> testsList = testPage.getContent();
+            List<FullTestDTO> fullTestDTOList = new ArrayList<>();
+            for (Test test : testsList) {
+                FullTestDTO fullTestDTO = new FullTestDTO();
+                fullTestDTO.setId(Long.valueOf(test.getId()));
+                fullTestDTO.setTitle(test.getTitle());
+                fullTestDTO.setDescription(test.getDescription());
+                fullTestDTO.setInstructions(test.getInstructions());
+                fullTestDTO.setHasResult(!test.getResults().isEmpty());
+                fullTestDTOList.add(fullTestDTO);
+            }
+            return new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
+        });
     }
 
     @Override
+//    @Cacheable(value = "tests", key = "#id")
     public Test getTest(Integer id) {
-        return testRepository.findById(id).orElseThrow(()->new RuntimeException("Test not found"));
+        String cacheKey = String.valueOf(id);
+        return redisCacheService.get("tests", cacheKey, () -> {
+            System.out.println(">>> Query DB getTestById with id=" + id);
+            return testRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Test not found"));
+        });
     }
 
     @Override
@@ -91,19 +122,32 @@ public class TestServiceImp implements TestService {
     }
 
     @Override
+//    @CachePut(value = "tests", key = "id")
     public Test updateTest(Integer id, Test test) {
-        testRepository.save(test);
-        return test;
+        // Lưu vào DB trước
+        Test updatedTest = testRepository.save(test);
+
+        // Cập nhật cache
+        String cacheKey = String.valueOf(id);
+        redisCacheService.put("tests::" + cacheKey, updatedTest);
+
+        return updatedTest;
     }
 
+
     @Override
+//    @CacheEvict(value = "tests", key = "#id")
     public void deleteTest(Integer id) {
-        Test testDel = testRepository.findById(id).orElseThrow(()->new RuntimeException("Test not found"));
-        if(testDel == null){
-            throw new RuntimeException("Test not found");
-        } else {
-            testRepository.delete(testDel);
-        }
+        // Lấy test từ DB trước
+        Test testDel = testRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Test not found"));
+
+        // Xóa khỏi DB
+        testRepository.delete(testDel);
+
+        // Xóa khỏi cache
+        String cacheKey = String.valueOf(id);
+        redisCacheService.evict("tests::" + cacheKey);
     }
 
     @Override
@@ -217,7 +261,6 @@ public class TestServiceImp implements TestService {
                 testOptionRepository.save(option);
             }
         }
-
 //        if (dto.getResults() != null) {
 //            for (TestResultDto rDto : dto.getResults()) {
 //                TestResult result = new TestResult();
@@ -398,54 +441,61 @@ public class TestServiceImp implements TestService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Test test = testRepository.findById(request.getTestId())
                 .orElseThrow(() -> new RuntimeException("Test not found"));
+
         StringBuilder labelResult = new StringBuilder("Result of test: " + test.getTitle() + ": ");
+
         // 2. Tạo UserTestAttempt
         UserTestAttempt attempt = new UserTestAttempt();
         attempt.setUsers(user);
         attempt.setTest(test);
         attempt.setStartedAt(Instant.now());
         attempt.setCompletedAt(Instant.now());
-        attempt.setResultSummary(request.getResult());
+//        attempt.setResultSummary(request.getResult());
+        attempt.setTotalScore(0);
 
-        // Gom điểm theo domain
+        // Lưu để có attemptId
+        attempt = saveUserTestAttempt(attempt);
+
+        // 3. Tính điểm theo domain
         Map<String, Integer> domainScores = new HashMap<>();
         int totalScore = 0;
 
         for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
-            TestQuestion question = getTestQuestion(ans.getQuestionId());
-            String domain = question.getQuestionType();
+            TestQuestion question = testQuestionRepository.findById(ans.getQuestionId())
+                    .orElseThrow(() -> new RuntimeException("Invalid question ID"));
 
             TestOption selected = testOptionRepository.findById(ans.getSelectedOptionId())
-                    .orElseThrow(() -> new RuntimeException("Invalid option ID: " + ans.getSelectedOptionId()));
+                    .orElseThrow(() -> new RuntimeException("Invalid option ID"));
 
             int score = selected.getScoreValue();
             totalScore += score;
 
-            // Cộng dồn vào domain tương ứng
-            domainScores.merge(domain, score, Integer::sum);
+            domainScores.merge(question.getQuestionType(), score, Integer::sum);
         }
-
         attempt.setTotalScore(totalScore);
-        // 3. Lưu UserTestAttempt (cascade sẽ lưu luôn domainResults)
-        saveUserTestAttempt(attempt);
-        // 4. Tạo danh sách UserTestDomainResult
+
+        // 4. Lưu domain results
         List<UserTestDomainResult> domainResults = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : domainScores.entrySet()) {
             String domain = entry.getKey();
             Integer score = entry.getValue();
+
             UserTestDomainResult domainResult = new UserTestDomainResult();
             domainResult.setAttempt(attempt);
             domainResult.setDomainName(domain);
             domainResult.setScore(score);
-            // gọi service để lấy kết quả phân loại
+
+            // phân loại kết quả
             TestResult matchedResult = getResultByDomainAndScore(domain, score, test);
             domainResult.setResultText(matchedResult.getResultText());
+
             labelResult.append(" ").append(matchedResult.getResultText()).append(",");
             domainResults.add(domainResult);
         }
-        attempt.setDomainResults(domainResults);
+        attempt.getDomainResults().clear();
+        attempt.getDomainResults().addAll(domainResults);
 
-        // 5. Lưu từng UserTestAnswer
+        // 5. Lưu từng UserTestAnswer (mapping mới)
         for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
             UserTestAnswer answer = new UserTestAnswer();
 
@@ -455,6 +505,7 @@ public class TestServiceImp implements TestService {
             id.setSelectedOptionId(ans.getSelectedOptionId());
             answer.setId(id);
 
+            // set quan hệ theo @MapsId
             answer.setAttempt(attempt);
             answer.setQuestion(testQuestionRepository.findById(ans.getQuestionId())
                     .orElseThrow(() -> new RuntimeException("Invalid question ID")));
@@ -463,7 +514,8 @@ public class TestServiceImp implements TestService {
 
             userTestAnswerRepository.save(answer);
         }
-
+        attempt.setResultSummary(labelResult.toString());
+        userTestAttempRepository.save(attempt);
         return labelResult.toString();
     }
 
