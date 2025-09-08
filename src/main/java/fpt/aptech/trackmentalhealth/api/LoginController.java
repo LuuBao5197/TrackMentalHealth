@@ -1,13 +1,12 @@
 package fpt.aptech.trackmentalhealth.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
-import fpt.aptech.trackmentalhealth.entities.EditProfileDTO;
-import fpt.aptech.trackmentalhealth.entities.PendingUserRegistration;
-import fpt.aptech.trackmentalhealth.entities.Role;
-import fpt.aptech.trackmentalhealth.entities.Users;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
 import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
+import fpt.aptech.trackmentalhealth.repository.login.UserFaceEmbeddingRepository;
 import fpt.aptech.trackmentalhealth.service.user.EmailService;
 import fpt.aptech.trackmentalhealth.service.user.UserService;
 import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
@@ -47,6 +46,8 @@ public class LoginController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private UserFaceEmbeddingRepository userFaceEmbeddingRepository;
     private MultipartFile avatar;
 
     // === GỬI OTP ĐĂNG KÝ ===
@@ -365,6 +366,63 @@ public class LoginController {
     private String generateOTP() {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
+    }
+
+    private double cosineSimilarity(double[] vec1, double[] vec2) {
+        double dot = 0.0;
+        double normVec1 = 0.0;
+        double normVec2 = 0.0;
+
+        for (int i = 0; i < vec1.length; i++) {
+            dot += vec1[i] * vec2[i];
+            normVec1 += Math.pow(vec1[i], 2);
+            normVec2 += Math.pow(vec2[i], 2);
+        }
+
+        return dot / (Math.sqrt(normVec1) * Math.sqrt(normVec2));
+    }
+
+    @PostMapping("/login-faceid")
+    public ResponseEntity<?> loginWithFaceId(@RequestBody String embeddingJson) {
+        try {
+            // Parse JSON embedding từ request
+            double[] inputEmbedding = new ObjectMapper().readValue(embeddingJson, double[].class);
+
+            // Lấy toàn bộ embedding trong DB
+            List<UserFaceEmbedding> allEmbeddings = userFaceEmbeddingRepository.findAll();
+
+            Users matchedUser = null;
+            double bestScore = 0.0;
+
+            for (UserFaceEmbedding stored : allEmbeddings) {
+                String embeddingStr = stored.getEmbedding();
+                if (embeddingStr == null || embeddingStr.isBlank()) {
+                    continue; // bỏ qua rỗng
+                }
+
+                double[] dbEmbedding = new ObjectMapper().readValue(embeddingStr, double[].class);
+                double similarity = cosineSimilarity(inputEmbedding, dbEmbedding);
+
+                if (similarity > bestScore) {
+                    bestScore = similarity;
+                    matchedUser = stored.getUser();
+                }
+            }
+
+            if (matchedUser == null || bestScore < 0.8) {
+                return ResponseEntity.status(401).body(Map.of("error", "Face not recognized"));
+            }
+
+            // Nếu khớp → trả về token
+            Map<String, String> result = userService.loginUsersByFaceId(matchedUser.getId());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "FaceID login failed",
+                    "details", e.getMessage()
+            ));
+        }
     }
 
 
