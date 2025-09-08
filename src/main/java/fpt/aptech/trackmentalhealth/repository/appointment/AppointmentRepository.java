@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface AppointmentRepository extends JpaRepository<Appointment, Integer> {
@@ -22,7 +23,9 @@ public interface AppointmentRepository extends JpaRepository<Appointment, Intege
     @Query("select a from Appointment a where a.psychologist.id=:psyId")
     List<Appointment> getAppointmentByPsychologistId(int psyId);
 
-    @Query("SELECT a FROM Appointment a WHERE a.status = 'APPROVED' AND a.timeStart = :date")
-    List<Appointment> findApprovedAppointmentsByDate(@Param("date") LocalDate date);
+
+    @Query("SELECT a FROM Appointment a WHERE a.status = 'ACCEPTED' AND a.timeStart = :dateTime")
+    List<Appointment> findApprovedAppointmentsByDateTime(@Param("dateTime") LocalDateTime dateTime);
+
 
 }

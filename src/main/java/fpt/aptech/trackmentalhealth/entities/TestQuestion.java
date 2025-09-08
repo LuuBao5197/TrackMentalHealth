@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Getter
@@ -28,8 +29,8 @@ public class TestQuestion {
     @Column(name = "question_text")
     private String questionText;
 
-    @Size(max = 10)
-    @Column(name = "question_type", length = 10)
+    @Size(max = 50)
+    @Column(name = "question_type")
     private String questionType;
 
     @Column(name = "question_order")
@@ -37,5 +38,5 @@ public class TestQuestion {
 
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonManagedReference
-    private List<TestOption> options;
+    private List<TestOption> options = new ArrayList<>();
 }

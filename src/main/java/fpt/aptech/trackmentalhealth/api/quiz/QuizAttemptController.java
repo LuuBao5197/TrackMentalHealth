@@ -19,9 +19,12 @@ public class QuizAttemptController {
     private final UserQuizAttemptService userQuizAttemptService;
 
     @PostMapping("/submit")
-    public ResponseEntity<UserQuizAttempt> submitQuiz(@RequestBody SubmitQuizRequest request) {
+    public ResponseEntity<UserQuizHistoryDTO> submitQuiz(@RequestBody SubmitQuizRequest request) {
         UserQuizAttempt result = userQuizAttemptService.submitQuiz(request);
-        return ResponseEntity.ok(result);
+        UserQuizHistoryDTO dto = new UserQuizHistoryDTO();
+        dto.setTotalScore(result.getTotalScore());
+        dto.setResultLabel(result.getResultLabel());
+        return ResponseEntity.ok(dto);
     }
     @GetMapping("/history/{userId}")
     public ResponseEntity<List<UserQuizHistoryDTO>> getUserQuizHistory(@PathVariable Integer userId) {

@@ -5,6 +5,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -36,5 +38,11 @@ public class UserTestAttempt {
     @Lob
     @Column(name = "result_summary")
     private String resultSummary;
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTestDomainResult> domainResults = new ArrayList<>();
+
+    @OneToMany(mappedBy = "attempt", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserTestAnswer> answerItems;
 
 }

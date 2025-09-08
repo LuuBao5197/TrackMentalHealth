@@ -2,9 +2,12 @@ package fpt.aptech.trackmentalhealth.dto.test;
 
 import lombok.Data;
 
+import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
+
 @Data
-public class FullTestDTO {
+public class FullTestDTO implements Serializable {
     private Long id; // null nếu là create
     private String title;
     private String description;

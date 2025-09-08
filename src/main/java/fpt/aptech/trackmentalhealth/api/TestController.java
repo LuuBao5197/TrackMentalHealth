@@ -1,12 +1,15 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import fpt.aptech.trackmentalhealth.dto.test.*;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestDetailDTO;
+import fpt.aptech.trackmentalhealth.dto.test.history.UserTestHistoryDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.test.*;
 import fpt.aptech.trackmentalhealth.repository.user.UserRepository;
 import fpt.aptech.trackmentalhealth.service.test.TestService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportService;
 import fpt.aptech.trackmentalhealth.ultis.TestImportValidationException;
+import org.apache.commons.compress.utils.Sets;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,10 +20,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/api/test")
@@ -212,7 +212,6 @@ public class TestController {
     public ResponseEntity<List<TestResult>> createMultiTestResult(@RequestBody List<TestResult> testResults) {
         return ResponseEntity.status(HttpStatus.CREATED).body(testService.createMultipleTestResults(testResults));
     }
-
     @PutMapping("/testResult/{id}")
     public ResponseEntity<TestResult> updateTestResult(@PathVariable Integer id, @RequestBody TestResult testResult) {
         return ResponseEntity.status(HttpStatus.OK).body(testService.updateTestResult(id, testResult));
@@ -223,7 +222,6 @@ public class TestController {
         testService.deleteTestResult(id);
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
-
     // api import file excel (xlsx) de tao bo cau hoi
     @PostMapping("/import-test")
     public ResponseEntity<?> importTest(@RequestParam("file") MultipartFile file) {
@@ -233,14 +231,13 @@ public class TestController {
         } catch (TestImportValidationException ex) {
             return ResponseEntity.badRequest().body(ex.getErrors());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(List.of("❌ Lỗi hệ thống: " + e.getMessage()));
-        }
+        e.printStackTrace(); // in log server để biết chính xác lỗi
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(List.of("❌ System errors: " + e.toString()));
     }
 
-
+}
     // api tao dong bo 1 bai test tu bai test cau hoi cac dap an den ket qua hien thi
-
     @PostMapping("/full")
     public ResponseEntity<?> createFullTest(@RequestBody FullTestDTO dto) {
         try {
@@ -248,6 +245,7 @@ public class TestController {
             testService.createFullTest(dto);
             return ResponseEntity.ok(Map.of("message", "Tạo bài test thành công"));
         } catch (Exception e) {
+            e.printStackTrace(); // 👈 In ra log server
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("error", e.getMessage()));
         }
@@ -270,7 +268,6 @@ public class TestController {
         }
     }
 
-
     @GetMapping("/{id}/getMaxScore")
     public ResponseEntity<Integer> getMaxScore(@PathVariable Integer id) {
 
@@ -278,55 +275,84 @@ public class TestController {
          return ResponseEntity.ok(maxScore);
     }
 
+    @GetMapping("/{id}/getMaxScore/{category}")
+    public ResponseEntity<Integer> getMaxScoreByCategory(@PathVariable Integer id, @PathVariable String category) {
+
+        Integer maxScore = testService.getMaxMarkOfTestByCategory(id, category);
+        return ResponseEntity.ok(maxScore);
+    }
+
+    @GetMapping("/{id}/getCategoriesOfTest")
+    public ResponseEntity<List<Map<String, Integer>>> getCategoryOfTest(@PathVariable Integer id) {
+        Set<String> categories = testService.getCategoriesOfTest(id);
+        List<Map<String, Integer>> categoriesOfTest = new ArrayList<>();
+        for (String category : categories) {
+            Map<String, Integer> result = new HashMap<>();
+            Integer maxScore = testService.getMaxMarkOfTestByCategory(id, category);
+            result.put(category, maxScore);
+            categoriesOfTest.add(result);
+        }
+        return ResponseEntity.ok(categoriesOfTest);
+    }
+
 
     // api luu ket qua va lua chon dap an nguoi dung khi lam bai test
-
-
     @PostMapping("/submitUserTestResult")
     public ResponseEntity<String> submitTestResult(@RequestBody TestAnswerRequest request) {
-        // 1. Tìm người dùng và bài test
-        Users user = userRepository.findById(request.getUserId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        Test test = testRepository.findById(request.getTestId())
-                .orElseThrow(() -> new RuntimeException("Test not found"));
+        String result = testService.submitTestResult(request);
+        return ResponseEntity.ok(result);
+    }
 
-        // 2. Tạo UserTestAttempt
-        UserTestAttempt attempt = new UserTestAttempt();
-        attempt.setUsers(user);
-        attempt.setTest(test);
-        attempt.setStartedAt(Instant.now()); // Có thể cập nhật nếu frontend gửi thời gian bắt đầu
-        attempt.setCompletedAt(Instant.now());
-        attempt.setResultSummary(request.getResult());
 
-        // Giả sử mỗi Option có trường `score`, ta tính tổng điểm
-        int totalScore = 0;
-        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
-            TestOption selected = testOptionRepository.findById(ans.getSelectedOptionId())
-                    .orElseThrow(() -> new RuntimeException("Invalid option ID: " + ans.getSelectedOptionId()));
-            totalScore += selected.getScoreValue();
+    @GetMapping("/getTestHistory/{userId}")
+    public ResponseEntity<List<UserTestHistoryDTO>> getHistoryTest(@PathVariable Integer userId) {
+        List<UserTestAttempt> attempts = userTestAttempRepository.findByUserId(userId);
+        List<UserTestHistoryDTO> dtos = new ArrayList<>();
+        for (UserTestAttempt attempt : attempts) {
+            UserTestHistoryDTO dto = new UserTestHistoryDTO();
+            dto.setTestTitle(attempt.getTest().getTitle());
+            dto.setAttemptId(attempt.getId());
+            dto.setCompletedAt(attempt.getCompletedAt());
+            dto.setTotalScore(attempt.getTotalScore());
+            dto.setStartedAt(attempt.getStartedAt());
+            dto.setResultLabel(attempt.getResultSummary());
+            dtos.add(dto);
         }
-        attempt.setTotalScore(totalScore);
-        testService.saveUserTestAttempt(attempt);
-//        userTestAttempRepository.save(attempt);
-
-        // 3. Lưu từng UserTestAnswer
-        for (TestAnswerRequest.AnswerDetail ans : request.getAnswers()) {
-            UserTestAnswer answer = new UserTestAnswer();
-            // Tạo ID phức hợp
-            UserTestAnswerId id = new UserTestAnswerId();
-            id.setAttemptId(attempt.getId());
-            id.setQuestionId(ans.getQuestionId());
-            id.setSelectedOptionId(ans.getSelectedOptionId());
-            answer.setId(id);
-            answer.setAttempt(attempt);
-            answer.setQuestion(testQuestionRepository.findById(ans.getQuestionId())
-                    .orElseThrow(() -> new RuntimeException("Invalid question ID")));
-            answer.setSelectedOption(testOptionRepository.findById(ans.getSelectedOptionId())
-                    .orElseThrow(() -> new RuntimeException("Invalid option ID")));
-
-            userTestAnswerRepository.save(answer);
+        return ResponseEntity.ok(dtos);
+    }
+    @GetMapping("/getTestHistory/test_attempt/{id}")
+    public ResponseEntity<UserTestHistoryDTO> getUserTestDetail(@PathVariable Integer id) {
+        UserTestAttempt userTestAttempt = userTestAttempRepository.findById(id).
+                orElseThrow(() -> new RuntimeException("TestAttempt not found"));
+        List<UserTestAnswer> userTestAnswers = userTestAttempt.getAnswerItems();
+        List<UserTestDetailDTO> dtos = new ArrayList<>();
+        for (UserTestAnswer userTestAnswer : userTestAnswers) {
+            UserTestDetailDTO userTestDetailDTO = new UserTestDetailDTO();
+            List<TestOption> optionList = userTestAnswer.getQuestion().getOptions();
+            List<OptionDTO> optionDTOList = new ArrayList<>();
+            for (TestOption option : optionList) {
+                OptionDTO optionDTO = new OptionDTO();
+                optionDTO.setId(option.getId());
+                optionDTO.setOptionText(option.getOptionText());
+                optionDTO.setOptionOrder(option.getOptionOrder());
+                optionDTO.setScoreValue(option.getScoreValue());
+                optionDTOList.add(optionDTO);
+            }
+            userTestDetailDTO.setOptions(optionDTOList);
+            userTestDetailDTO.setQuestionText(userTestAnswer.getQuestion().getQuestionText());
+            userTestDetailDTO.setQuestionInstruction(userTestAnswer.getQuestion().getTest().getInstructions());
+            userTestDetailDTO.setSelectedOptionText(userTestAnswer.getSelectedOption().getOptionText());
+//            userTestDetailDTO.setResultLabel(userTestAnswer.getAttempt().getResultSummary());
+            dtos.add(userTestDetailDTO);
         }
-        return ResponseEntity.ok("Test submitted successfully!");
+        UserTestHistoryDTO dto = new UserTestHistoryDTO();
+        dto.setDetailDTOList(dtos);
+        dto.setTestTitle(userTestAttempt.getTest().getTitle());
+        dto.setStartedAt(userTestAttempt.getStartedAt());
+        dto.setCompletedAt(userTestAttempt.getCompletedAt());
+        dto.setTotalScore(userTestAttempt.getTotalScore());
+        dto.setResultLabel(userTestAttempt.getResultSummary());
+        return ResponseEntity.ok(dto);
     }
 
 }
