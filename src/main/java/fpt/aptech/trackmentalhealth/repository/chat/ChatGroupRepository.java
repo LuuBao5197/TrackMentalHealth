@@ -26,10 +26,10 @@ public interface ChatGroupRepository extends JpaRepository<ChatGroup, Integer> {
                                    @Param("currentUserId") int currentUserId);
 
     @Query(value = """
-                SELECT TOP 1 * 
-                FROM chat_message_group m 
-                WHERE m.group_id = :groupId 
-                ORDER BY m.timestamp DESC
+            SELECT TOP 1 * 
+            FROM chat_message_group m 
+            WHERE m.group_id = :groupId 
+            ORDER BY m.send_at DESC
             """, nativeQuery = true)
     ChatMessageGroup findLatestMessageByGroupId(@Param("groupId") int groupId);
 
