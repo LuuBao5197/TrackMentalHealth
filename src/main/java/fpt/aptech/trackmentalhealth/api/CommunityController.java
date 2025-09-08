@@ -5,6 +5,7 @@ import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.service.community.CommunityService;
 import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,11 +20,12 @@ import java.io.IOException;
 import java.io.ObjectOutput;
 import java.text.MessageFormat;
 import java.time.LocalDate;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
-
+import org.springframework.http.*;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
+import org.springframework.web.client.RestTemplate;
 @RestController
 @RequestMapping("/api/community")
 public class CommunityController {
@@ -57,8 +59,11 @@ public class CommunityController {
         return ResponseEntity.ok().body(dto);
     }
 
+
+
+    // ...
     @PostMapping("/post")
-    public ResponseEntity<CommunityPost> createPost(
+    public ResponseEntity<Map<String,String>> createPost(
             @RequestParam("content") String content,
             @RequestParam("isAnonymous") boolean isAnonymous,
             @RequestParam("userId") Integer userId,
@@ -74,6 +79,28 @@ public class CommunityController {
         Users user = new Users();
         user.setId(userId);
 
+        // Bổ sung: Bước kiểm duyệt hình ảnh
+        if (images != null) {
+            for (MultipartFile image : images) {
+                boolean isImageApproved = checkImage(image);
+                if (!isImageApproved) {
+                    // Trả về lỗi nếu hình ảnh không được duyệt
+                    Map<String, String> error = new HashMap<>();
+                    error.put("error", "Image content is invalid and violates our policy.");
+                    return ResponseEntity.badRequest().body(error);
+                }
+            }
+        }
+
+        if(content != null && !content.isEmpty()) {
+            boolean isContentApprove = checkText(content);
+            if (!isContentApprove) {
+                Map<String, String> error = new HashMap<>();
+                error.put("error", "Content content is invalid and violates our policy.");
+                return ResponseEntity.badRequest().body(error);
+            }
+        }
+
         CommunityPost post = new CommunityPost();
         post.setContent(content);
         post.setIsAnonymous(isAnonymous);
@@ -84,19 +111,98 @@ public class CommunityController {
         Set<CommunityPostMedia> mediaList = new LinkedHashSet<>();
         if (images != null) {
             for (MultipartFile image : images) {
-                // Lưu file vào server hoặc cloud nếu muốn
-                String filename = cloudinaryService.uploadFile(image); // Viết hàm này để lưu và lấy URL
+                String filename = cloudinaryService.uploadFile(image);
                 CommunityPostMedia media = new CommunityPostMedia();
-                media.setMediaUrl(filename); // hoặc URL nếu dùng cloud
-                media.setPost(post); // gắn post cha
+                media.setMediaUrl(filename);
+                media.setPost(post);
                 mediaList.add(media);
             }
         }
         post.setMediaList(mediaList);
         communityService.saveCommunityPost(post);
-        return ResponseEntity.status(HttpStatus.CREATED).body(post);
+        Map<String, String> success = new HashMap<>();
+        success.put("success", "Create success.");
+        return ResponseEntity.status(HttpStatus.CREATED).body(success);
     }
 
+
+
+// ...
+
+    // Phương thức để gọi API kiểm duyệt văn bản
+    private boolean checkText(String content) {
+        try {
+            String apiUrl = "http://localhost:8000/moderate/text";
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Chuẩn bị request body
+            MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
+            body.add("content", content);
+
+            // Chuẩn bị request header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED); // Sử dụng content-type phù hợp
+            HttpEntity<MultiValueMap<String, String>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Gửi request POST
+            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, requestEntity, Map.class);
+
+            // Kiểm tra kết quả
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = response.getBody();
+                Boolean isApproved = (Boolean) responseBody.get("approved");
+                if (isApproved != null && isApproved) {
+                    return true; // Văn bản đã được duyệt
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Xử lý lỗi khi gọi API (ví dụ: API không hoạt động)
+            // Mặc định trả về false để từ chối nội dung nếu có lỗi
+            return true; // neu AI khong hoat dong thi van phai phe duyet ko lam anh huong nguoi dung
+        }
+        return false; // Mặc định từ chối nếu có vấn đề
+    }
+    // Phương thức để gọi API kiểm duyệt hình ảnh
+    private boolean checkImage(MultipartFile image) {
+        try {
+            String apiUrl = "http://localhost:8000/moderate/image";
+            RestTemplate restTemplate = new RestTemplate();
+
+            // Chuẩn bị request body
+            MultiValueMap<String, Object> body = new LinkedMultiValueMap<>();
+            body.add("file", new ByteArrayResource(image.getBytes()) {
+                @Override
+                public String getFilename() {
+                    return image.getOriginalFilename();
+                }
+            });
+
+            // Chuẩn bị request header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.MULTIPART_FORM_DATA);
+            HttpEntity<MultiValueMap<String, Object>> requestEntity = new HttpEntity<>(body, headers);
+
+            // Gửi request POST
+            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, requestEntity, Map.class);
+
+            // Kiểm tra kết quả
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = response.getBody();
+                Boolean isApproved = (Boolean) responseBody.get("approved");
+                if (isApproved != null && isApproved) {
+                    return true; // Hình ảnh đã được duyệt
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Xử lý lỗi khi gọi API (ví dụ: API không hoạt động)
+            // Bạn có thể quyết định chấp nhận hoặc từ chối hình ảnh trong trường hợp này.
+            // Tùy theo logic nghiệp vụ, có thể trả về false để từ chối
+            return true;
+        }
+        return false; // Mặc định từ chối nếu có vấn đề
+    }
     @PutMapping("/post/{id}")
     public ResponseEntity<CommunityPost> updatePost(
             @PathVariable Integer id,

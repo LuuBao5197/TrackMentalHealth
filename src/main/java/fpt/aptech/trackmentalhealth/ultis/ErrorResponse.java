@@ -2,11 +2,11 @@ package fpt.aptech.trackmentalhealth.ultis;
 
 import java.util.List;
 
-public class TestImportErrorResponse {
+public class ErrorResponse {
     private String message;
     private List<String> errors;
 
-    public TestImportErrorResponse(String message, List<String> errors) {
+    public ErrorResponse(String message, List<String> errors) {
         this.message = message;
         this.errors = errors;
     }
