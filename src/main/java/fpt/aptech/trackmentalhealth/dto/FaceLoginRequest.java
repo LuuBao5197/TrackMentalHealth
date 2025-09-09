@@ -4,6 +4,6 @@ import lombok.Data;
 
 @Data
 public class FaceLoginRequest {
-    private String username;
+    private String email;
     private double[] embedding;
 }

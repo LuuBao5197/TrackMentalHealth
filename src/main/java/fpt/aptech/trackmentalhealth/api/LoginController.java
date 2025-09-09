@@ -386,9 +386,9 @@ public class LoginController {
     @PostMapping("/login-faceid")
     public ResponseEntity<?> loginWithFaceId(@RequestBody FaceLoginRequest request) {
         try {
-            // Lấy embedding từ DB theo username
+            // Lấy embedding từ DB theo email
             Optional<UserFaceEmbedding> optionalEmbedding =
-                    userFaceEmbeddingRepository.findByUsername(request.getUsername());
+                    userFaceEmbeddingRepository.findByUserEmail(request.getEmail());
 
             if (optionalEmbedding.isEmpty() || optionalEmbedding.get().getEmbedding() == null) {
                 return ResponseEntity.status(404).body(Map.of("error", "No face data found for this user"));
@@ -398,15 +398,15 @@ public class LoginController {
             double[] dbEmbedding = new ObjectMapper()
                     .readValue(optionalEmbedding.get().getEmbedding(), double[].class);
 
-            // Tính độ tương đồng
-            double similarity = cosineSimilarity(request.getEmbedding(), dbEmbedding);
+            // Tính độ tương đồng (dùng Euclidean distance thay vì cosine)
+            double distance = euclideanDistance(request.getEmbedding(), dbEmbedding);
 
-            if (similarity < 0.8) {
+            if (distance > 0.45) { // ngưỡng có thể chỉnh
                 return ResponseEntity.status(401).body(Map.of("error", "Face not recognized"));
             }
 
             // Nếu khớp → login
-            Map<String, String> result = userService.loginUsersByFaceId(request.getUsername());
+            Map<String, String> result = userService.loginUsersByFaceId(request.getEmail());
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
@@ -416,4 +416,13 @@ public class LoginController {
             ));
         }
     }
+
+    private double euclideanDistance(double[] vec1, double[] vec2) {
+        double sum = 0.0;
+        for (int i = 0; i < vec1.length; i++) {
+            sum += Math.pow(vec1[i] - vec2[i], 2);
+        }
+        return Math.sqrt(sum);
+    }
+
 }

@@ -16,8 +16,10 @@ public interface UserFaceEmbeddingRepository extends JpaRepository<UserFaceEmbed
     // Lấy embedding theo user
     List<UserFaceEmbedding> findByUser(Users user);
 
-    @Query("SELECT e FROM UserFaceEmbedding e WHERE e.user.username = :username")
-    Optional<UserFaceEmbedding> findByUsername(@Param("username") String username);
+    @Query("SELECT ufe FROM UserFaceEmbedding ufe " +
+            "JOIN ufe.user u " +
+            "WHERE u.email = :email")
+    Optional<UserFaceEmbedding> findByUserEmail(@Param("email") String email);
 
     // Nếu chỉ lưu 1 embedding mỗi user
     Optional<UserFaceEmbedding> findFirstByUserOrderByCreatedAtDesc(Users user);

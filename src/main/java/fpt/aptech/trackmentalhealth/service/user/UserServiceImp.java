@@ -90,22 +90,21 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public Map<String, String> loginUsersByFaceId(String username) {
-        Optional<Users> user = loginRepository.findByUsername(username);
+    public Map<String, String> loginUsersByFaceId(String email) {
+        Users user = loginRepository.findByEmail(email);
 
-        if (user.isPresent()) {
-            Optional<ContentCreator> contentCreatorOpt = contentCreatorRepository.findByUser(user.orElse(null));
-            Integer contentCreatorId = contentCreatorOpt.map(ContentCreator::getId).orElse(null);
-
-            String token = jwtUtils.generateToken(user.get().getEmail(), user.orElse(null), contentCreatorId);
+        if (user != null) {
+            // token chỉ cần email + user + role
+            String token = jwtUtils.generateToken(user.getEmail(), user, null);
 
             return Map.of(
                     "token", token,
-                    "roleName", user.get().getRoleId().getRoleName()
+                    "roleName", user.getRoleId().getRoleName()
             );
         }
         return null;
     }
+
 
 //    @Override
 //    public Users registerWithFace(Users users, String embeddingJson) {
