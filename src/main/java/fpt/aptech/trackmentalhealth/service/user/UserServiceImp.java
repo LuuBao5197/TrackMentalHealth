@@ -90,8 +90,8 @@ public class UserServiceImp implements UserService {
     }
 
     @Override
-    public Map<String, String> loginUsersByFaceId(Integer userId) {
-        Optional<Users> user = loginRepository.findById(userId);
+    public Map<String, String> loginUsersByFaceId(String username) {
+        Optional<Users> user = loginRepository.findByUsername(username);
 
         if (user.isPresent()) {
             Optional<ContentCreator> contentCreatorOpt = contentCreatorRepository.findByUser(user.orElse(null));

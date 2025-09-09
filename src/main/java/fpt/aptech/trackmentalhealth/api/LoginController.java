@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fpt.aptech.trackmentalhealth.dto.FaceLoginRequest;
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
@@ -383,38 +384,29 @@ public class LoginController {
     }
 
     @PostMapping("/login-faceid")
-    public ResponseEntity<?> loginWithFaceId(@RequestBody String embeddingJson) {
+    public ResponseEntity<?> loginWithFaceId(@RequestBody FaceLoginRequest request) {
         try {
-            // Parse JSON embedding từ request
-            double[] inputEmbedding = new ObjectMapper().readValue(embeddingJson, double[].class);
+            // Lấy embedding từ DB theo username
+            Optional<UserFaceEmbedding> optionalEmbedding =
+                    userFaceEmbeddingRepository.findByUsername(request.getUsername());
 
-            // Lấy toàn bộ embedding trong DB
-            List<UserFaceEmbedding> allEmbeddings = userFaceEmbeddingRepository.findAll();
-
-            Users matchedUser = null;
-            double bestScore = 0.0;
-
-            for (UserFaceEmbedding stored : allEmbeddings) {
-                String embeddingStr = stored.getEmbedding();
-                if (embeddingStr == null || embeddingStr.isBlank()) {
-                    continue; // bỏ qua rỗng
-                }
-
-                double[] dbEmbedding = new ObjectMapper().readValue(embeddingStr, double[].class);
-                double similarity = cosineSimilarity(inputEmbedding, dbEmbedding);
-
-                if (similarity > bestScore) {
-                    bestScore = similarity;
-                    matchedUser = stored.getUser();
-                }
+            if (optionalEmbedding.isEmpty() || optionalEmbedding.get().getEmbedding() == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "No face data found for this user"));
             }
 
-            if (matchedUser == null || bestScore < 0.8) {
+            // Parse embedding trong DB
+            double[] dbEmbedding = new ObjectMapper()
+                    .readValue(optionalEmbedding.get().getEmbedding(), double[].class);
+
+            // Tính độ tương đồng
+            double similarity = cosineSimilarity(request.getEmbedding(), dbEmbedding);
+
+            if (similarity < 0.8) {
                 return ResponseEntity.status(401).body(Map.of("error", "Face not recognized"));
             }
 
-            // Nếu khớp → trả về token
-            Map<String, String> result = userService.loginUsersByFaceId(matchedUser.getId());
+            // Nếu khớp → login
+            Map<String, String> result = userService.loginUsersByFaceId(request.getUsername());
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
@@ -424,6 +416,4 @@ public class LoginController {
             ));
         }
     }
-
-
 }
