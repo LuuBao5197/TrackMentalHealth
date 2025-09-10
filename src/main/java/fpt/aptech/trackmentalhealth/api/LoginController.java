@@ -417,6 +417,33 @@ public class LoginController {
         }
     }
 
+    @PostMapping("/register-faceid")
+    public ResponseEntity<?> registerFaceId(@RequestBody FaceLoginRequest request) {
+        try {
+            Users user = loginRepository.findByEmail(request.getEmail());
+            if (user == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            // Convert embedding to JSON string
+            String embeddingJson = new ObjectMapper().writeValueAsString(request.getEmbedding());
+
+            // Save embedding
+            UserFaceEmbedding faceEmbedding = new UserFaceEmbedding();
+            faceEmbedding.setUser(user);
+            faceEmbedding.setEmbedding(embeddingJson);
+            userFaceEmbeddingRepository.save(faceEmbedding);
+
+            return ResponseEntity.ok(Map.of("message", "FaceID registered successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Failed to register FaceID",
+                    "details", e.getMessage()
+            ));
+        }
+    }
+
     private double euclideanDistance(double[] vec1, double[] vec2) {
         double sum = 0.0;
         for (int i = 0; i < vec1.length; i++) {
