@@ -228,7 +228,7 @@ public class LoginController {
         if (result != null) {
             return ResponseEntity.ok(result);
         }
-        return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password!"));
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
     @GetMapping("/by-role/{roleId}")

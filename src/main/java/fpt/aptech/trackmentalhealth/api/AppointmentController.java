@@ -28,7 +28,8 @@ public class AppointmentController {
 
     @GetMapping("/list/{userId}")
     public List<Appointment> getAppointmentByUserId(@PathVariable int userId) {
-        return appointmentService.getAppointmentByUserId(userId);
+        List<Appointment> appointments = appointmentService.getAppointmentByUserId(userId);
+        return appointments;
     }
 
     @GetMapping("/{id}")

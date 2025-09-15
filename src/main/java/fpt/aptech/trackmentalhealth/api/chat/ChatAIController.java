@@ -66,7 +66,16 @@ public class ChatAIController {
 
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
-            body.put("messages", List.of(Map.of("role", "user", "content", message)));
+            body.put("messages", List.of(
+                    Map.of("role", "system", "content",
+                            "Bạn là một bác sĩ tâm lý chuyên nghiệp. "
+                                    + "Chỉ trả lời các vấn đề liên quan đến tâm lý, "
+                                    + "luôn giữ giọng điệu nghiêm túc, đúng trọng tâm, "
+                                    + "ngắn gọn và mang tính chuyên môn. "
+                                    + "Nếu người dùng hỏi ngoài lĩnh vực tâm lý thì lịch sự từ chối: "
+                                    + "'Xin lỗi, tôi chỉ có thể hỗ trợ về các vấn đề tâm lý.'"),
+                    Map.of("role", "user", "content", message)
+            ));
 
             HttpEntity<Map<String, Object>> entity = new HttpEntity<>(body, headers);
 
