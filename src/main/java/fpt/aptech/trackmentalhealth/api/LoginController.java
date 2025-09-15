@@ -368,7 +368,6 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
-
     private double cosineSimilarity(double[] vec1, double[] vec2) {
         double dot = 0.0;
         double normVec1 = 0.0;
