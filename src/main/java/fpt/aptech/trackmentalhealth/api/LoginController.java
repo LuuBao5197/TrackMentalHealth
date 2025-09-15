@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.api;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fpt.aptech.trackmentalhealth.dto.FaceLoginRequest;
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
 import fpt.aptech.trackmentalhealth.entities.*;
@@ -227,7 +228,7 @@ public class LoginController {
         if (result != null) {
             return ResponseEntity.ok(result);
         }
-        return ResponseEntity.status(401).body(Map.of("error", "Invalid email or password!"));
+        return ResponseEntity.status(401).body(Map.of("error", "Invalid credentials"));
     }
 
     @GetMapping("/by-role/{roleId}")
@@ -367,7 +368,6 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
-
     private double cosineSimilarity(double[] vec1, double[] vec2) {
         double dot = 0.0;
         double normVec1 = 0.0;
@@ -383,38 +383,29 @@ public class LoginController {
     }
 
     @PostMapping("/login-faceid")
-    public ResponseEntity<?> loginWithFaceId(@RequestBody String embeddingJson) {
+    public ResponseEntity<?> loginWithFaceId(@RequestBody FaceLoginRequest request) {
         try {
-            // Parse JSON embedding từ request
-            double[] inputEmbedding = new ObjectMapper().readValue(embeddingJson, double[].class);
+            // Lấy embedding từ DB theo email
+            Optional<UserFaceEmbedding> optionalEmbedding =
+                    userFaceEmbeddingRepository.findByUserEmail(request.getEmail());
 
-            // Lấy toàn bộ embedding trong DB
-            List<UserFaceEmbedding> allEmbeddings = userFaceEmbeddingRepository.findAll();
-
-            Users matchedUser = null;
-            double bestScore = 0.0;
-
-            for (UserFaceEmbedding stored : allEmbeddings) {
-                String embeddingStr = stored.getEmbedding();
-                if (embeddingStr == null || embeddingStr.isBlank()) {
-                    continue; // bỏ qua rỗng
-                }
-
-                double[] dbEmbedding = new ObjectMapper().readValue(embeddingStr, double[].class);
-                double similarity = cosineSimilarity(inputEmbedding, dbEmbedding);
-
-                if (similarity > bestScore) {
-                    bestScore = similarity;
-                    matchedUser = stored.getUser();
-                }
+            if (optionalEmbedding.isEmpty() || optionalEmbedding.get().getEmbedding() == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "No face data found for this user"));
             }
 
-            if (matchedUser == null || bestScore < 0.8) {
+            // Parse embedding trong DB
+            double[] dbEmbedding = new ObjectMapper()
+                    .readValue(optionalEmbedding.get().getEmbedding(), double[].class);
+
+            // Tính độ tương đồng (dùng Euclidean distance thay vì cosine)
+            double distance = euclideanDistance(request.getEmbedding(), dbEmbedding);
+
+            if (distance > 0.45) { // ngưỡng có thể chỉnh
                 return ResponseEntity.status(401).body(Map.of("error", "Face not recognized"));
             }
 
-            // Nếu khớp → trả về token
-            Map<String, String> result = userService.loginUsersByFaceId(matchedUser.getId());
+            // Nếu khớp → login
+            Map<String, String> result = userService.loginUsersByFaceId(request.getEmail());
             return ResponseEntity.ok(result);
 
         } catch (Exception e) {
@@ -425,5 +416,39 @@ public class LoginController {
         }
     }
 
+    @PostMapping("/register-faceid")
+    public ResponseEntity<?> registerFaceId(@RequestBody FaceLoginRequest request) {
+        try {
+            Users user = loginRepository.findByEmail(request.getEmail());
+            if (user == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            // Convert embedding to JSON string
+            String embeddingJson = new ObjectMapper().writeValueAsString(request.getEmbedding());
+
+            // Save embedding
+            UserFaceEmbedding faceEmbedding = new UserFaceEmbedding();
+            faceEmbedding.setUser(user);
+            faceEmbedding.setEmbedding(embeddingJson);
+            userFaceEmbeddingRepository.save(faceEmbedding);
+
+            return ResponseEntity.ok(Map.of("message", "FaceID registered successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Failed to register FaceID",
+                    "details", e.getMessage()
+            ));
+        }
+    }
+
+    private double euclideanDistance(double[] vec1, double[] vec2) {
+        double sum = 0.0;
+        for (int i = 0; i < vec1.length; i++) {
+            sum += Math.pow(vec1[i] - vec2[i], 2);
+        }
+        return Math.sqrt(sum);
+    }
 
 }
