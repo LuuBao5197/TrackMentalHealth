@@ -1,6 +1,5 @@
 package fpt.aptech.trackmentalhealth.entities;
 
-import fpt.aptech.trackmentalhealth.entities.Exercise;
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -17,4 +17,6 @@ public interface LoginRepository extends JpaRepository<Users, Integer> {
     Optional<Users> findById(int id);
 
     List<Users> findByRoleId_Id(Integer roleIdId);
+
+    Optional<Users> findByUsername(String username);
 }

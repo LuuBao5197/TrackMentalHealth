@@ -1,13 +1,13 @@
 package fpt.aptech.trackmentalhealth.api;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import fpt.aptech.trackmentalhealth.dto.FaceLoginRequest;
 import fpt.aptech.trackmentalhealth.dto.RegisterUserRequestDTO;
 import fpt.aptech.trackmentalhealth.dto.UserDTO;
-import fpt.aptech.trackmentalhealth.entities.EditProfileDTO;
-import fpt.aptech.trackmentalhealth.entities.PendingUserRegistration;
-import fpt.aptech.trackmentalhealth.entities.Role;
-import fpt.aptech.trackmentalhealth.entities.Users;
+import fpt.aptech.trackmentalhealth.entities.*;
 import fpt.aptech.trackmentalhealth.repository.login.LoginRepository;
 import fpt.aptech.trackmentalhealth.repository.login.PendingUserRepository;
+import fpt.aptech.trackmentalhealth.repository.login.UserFaceEmbeddingRepository;
 import fpt.aptech.trackmentalhealth.service.user.EmailService;
 import fpt.aptech.trackmentalhealth.service.user.UserService;
 import fpt.aptech.trackmentalhealth.ultis.CloudinaryService;
@@ -47,6 +47,8 @@ public class LoginController {
     @Autowired
     private CloudinaryService cloudinaryService;
 
+    @Autowired
+    private UserFaceEmbeddingRepository userFaceEmbeddingRepository;
     private MultipartFile avatar;
 
     // === GỬI OTP ĐĂNG KÝ ===
@@ -366,6 +368,87 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
+    private double cosineSimilarity(double[] vec1, double[] vec2) {
+        double dot = 0.0;
+        double normVec1 = 0.0;
+        double normVec2 = 0.0;
 
+        for (int i = 0; i < vec1.length; i++) {
+            dot += vec1[i] * vec2[i];
+            normVec1 += Math.pow(vec1[i], 2);
+            normVec2 += Math.pow(vec2[i], 2);
+        }
+
+        return dot / (Math.sqrt(normVec1) * Math.sqrt(normVec2));
+    }
+
+    @PostMapping("/login-faceid")
+    public ResponseEntity<?> loginWithFaceId(@RequestBody FaceLoginRequest request) {
+        try {
+            // Lấy embedding từ DB theo email
+            Optional<UserFaceEmbedding> optionalEmbedding =
+                    userFaceEmbeddingRepository.findByUserEmail(request.getEmail());
+
+            if (optionalEmbedding.isEmpty() || optionalEmbedding.get().getEmbedding() == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "No face data found for this user"));
+            }
+
+            // Parse embedding trong DB
+            double[] dbEmbedding = new ObjectMapper()
+                    .readValue(optionalEmbedding.get().getEmbedding(), double[].class);
+
+            // Tính độ tương đồng (dùng Euclidean distance thay vì cosine)
+            double distance = euclideanDistance(request.getEmbedding(), dbEmbedding);
+
+            if (distance > 0.45) { // ngưỡng có thể chỉnh
+                return ResponseEntity.status(401).body(Map.of("error", "Face not recognized"));
+            }
+
+            // Nếu khớp → login
+            Map<String, String> result = userService.loginUsersByFaceId(request.getEmail());
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "FaceID login failed",
+                    "details", e.getMessage()
+            ));
+        }
+    }
+
+    @PostMapping("/register-faceid")
+    public ResponseEntity<?> registerFaceId(@RequestBody FaceLoginRequest request) {
+        try {
+            Users user = loginRepository.findByEmail(request.getEmail());
+            if (user == null) {
+                return ResponseEntity.status(404).body(Map.of("error", "User not found"));
+            }
+
+            // Convert embedding to JSON string
+            String embeddingJson = new ObjectMapper().writeValueAsString(request.getEmbedding());
+
+            // Save embedding
+            UserFaceEmbedding faceEmbedding = new UserFaceEmbedding();
+            faceEmbedding.setUser(user);
+            faceEmbedding.setEmbedding(embeddingJson);
+            userFaceEmbeddingRepository.save(faceEmbedding);
+
+            return ResponseEntity.ok(Map.of("message", "FaceID registered successfully"));
+
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Failed to register FaceID",
+                    "details", e.getMessage()
+            ));
+        }
+    }
+
+    private double euclideanDistance(double[] vec1, double[] vec2) {
+        double sum = 0.0;
+        for (int i = 0; i < vec1.length; i++) {
+            sum += Math.pow(vec1[i] - vec2[i], 2);
+        }
+        return Math.sqrt(sum);
+    }
 
 }

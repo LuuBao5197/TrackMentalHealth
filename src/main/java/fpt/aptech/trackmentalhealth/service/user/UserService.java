@@ -18,4 +18,7 @@ public interface UserService {
 
     Users findById(String id);
 
+    Map<String, String> loginUsersByFaceId(String email);
+
+    Users registerWithFace(Users users, String embeddingJson);
 }

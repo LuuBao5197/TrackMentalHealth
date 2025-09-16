@@ -135,6 +135,10 @@ public class MentalAnalysisController {
 
                     // Làm sạch kết quả nếu vẫn bị dính backtick
                     String cleanResult = result.trim();
+// Remove all ```json or ``` wrappers
+                    cleanResult = cleanResult.replaceAll("```json", "")
+                            .replaceAll("```", "")
+                            .trim();
                     if (cleanResult.startsWith("```")) {
                         int firstBrace = cleanResult.indexOf("{");
                         int lastBrace = cleanResult.lastIndexOf("}");
@@ -142,6 +146,7 @@ public class MentalAnalysisController {
                             cleanResult = cleanResult.substring(firstBrace, lastBrace + 1);
                         }
                     }
+
 
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();

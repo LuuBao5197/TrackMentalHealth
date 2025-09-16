@@ -33,7 +33,7 @@ public class Users {
 
     @Size(max = 255)
     @Nationalized
-    @Column(name = "username")
+    @Column(name = "username", unique = true, nullable = false, length = 25)
     private String username;
 
     @Size(max = 255)
