@@ -70,34 +70,40 @@ public class MentalAnalysisController {
         List<Test> allTests = testRepository.findAll();
 
         String testDescriptions = allTests.stream()
-                .map(test -> "Tên: " + test.getTitle()
-                        + "\nMô tả: " + test.getDescription()
-                        + "\nHướng dẫn: " + test.getInstructions())
+                .map(test -> "Title: " + test.getTitle()
+                        + "\nDescription: " + test.getDescription()
+                        + "\nInstructions: " + test.getInstructions())
                 .collect(Collectors.joining("\n\n"));
 
-        String prompt = "Dưới đây là cảm xúc và nhật ký của người dùng trong 14 ngày gần nhất:\n"
-                + "---Cảm xúc---\n" + moodSummary + "\n"
-                + "---Nhật ký---\n" + diarySummary + "\n\n"
-                + "---Danh sách các bài test tâm lý có sẵn---\n" + testDescriptions + "\n\n"
-                + "Hãy:\n"
-                + "1. Phân tích tình trạng tinh thần người dùng theo 4 mức độ:\n"
-                + "   - Level 1: Ổn định\n"
-                + "   - Level 2: Cảnh báo nhẹ\n"
-                + "   - Level 3: Cảnh báo vừa (lo âu, buồn bã kéo dài)\n"
-                + "   - Level 4: Nguy cơ cao (trầm cảm nghiêm trọng, tuyệt vọng...)\n"
-                + "2. Nếu Level = 3, chọn một bài test phù hợp từ danh sách trên và gợi ý.\n"
-                + "3. Nếu Level = 4, cảnh báo khẩn cấp và gợi ý liên hệ chuyên gia tâm lý hoặc bác sĩ. Không đề xuất bài test.\n"
-                + "4. Chỉ trả về JSON thuần theo đúng format sau, không kèm ký hiệu ``` hoặc văn bản khác:\n"
+        String prompt = "Below are the moods and diary entries of the user in the last 14 days:\n"
+                + "---Moods---\n" + moodSummary + "\n"
+                + "---Diary---\n" + diarySummary + "\n\n"
+                + "---List of available psychological tests---\n" + testDescriptions + "\n\n"
+                + "Please:\n"
+                + "1. Analyze the user's mental state according to 4 levels:\n"
+                + "   - Level 1: Stable (if Level = 1, return a motivational message encouraging the user to maintain their good state).\n"
+                + "   - Level 2: Mild warning\n"
+                + "   - Level 3: Moderate warning (prolonged anxiety, sadness)\n"
+                + "   - Level 4: High risk (severe depression, hopelessness...)\n"
+                + "2. If Level = 1, the suggestion must follow this format:\n"
+                + "   {\n"
+                + "     \"type\": \"motivation\",\n"
+                + "     \"message\": \"You are doing very well, keep maintaining a positive lifestyle!\"\n"
+                + "   }\n"
+                + "3. If Level = 3, choose a suitable test from the list above and suggest it.\n"
+                + "4. If Level = 4, provide an emergency warning and suggest contacting a psychologist or doctor. Do not suggest a test.\n"
+                + "5. Only return raw JSON in the following format, without ``` or any other text:\n"
                 + "{\n"
                 + "  \"level\": 3,\n"
                 + "  \"description\": \"...\",\n"
                 + "  \"suggestion\": {\n"
-                + "    \"type\": \"test\", // hoặc 'emergency'\n"
-                + "    \"testTitle\": \"...\",  // nếu là type=test\n"
+                + "    \"type\": \"test\", // or 'emergency'\n"
+                + "    \"testTitle\": \"...\",  // if type=test\n"
                 + "    \"testDescription\": \"...\",\n"
                 + "    \"instructions\": \"...\"\n"
-                + "    // nếu type=emergency thì chỉ cần: \"message\": \"...\"\n"
+                + "    // if type=emergency then only need: \"message\": \"...\"\n"
                 + "  }\n"
+                +  "Important: All output (description, suggestion, messages) must be in English only."
                 + "}";
 
         try {
@@ -109,7 +115,7 @@ public class MentalAnalysisController {
             Map<String, Object> body = new HashMap<>();
             body.put("model", "gpt-4o-mini");
 
-            // Nếu model hỗ trợ, yêu cầu trả JSON thuần
+            // If the model supports, request pure JSON response
             body.put("response_format", Map.of("type", "json_object"));
 
             List<Map<String, String>> messages = new ArrayList<>();
@@ -133,9 +139,9 @@ public class MentalAnalysisController {
                     Map messageMap = (Map) choice.get("message");
                     String result = (String) messageMap.get("content");
 
-                    // Làm sạch kết quả nếu vẫn bị dính backtick
+                    // Clean the result if it still contains backticks
                     String cleanResult = result.trim();
-// Remove all ```json or ``` wrappers
+                    // Remove all ```json or ``` wrappers
                     cleanResult = cleanResult.replaceAll("```json", "")
                             .replaceAll("```", "")
                             .trim();
@@ -147,12 +153,11 @@ public class MentalAnalysisController {
                         }
                     }
 
-
                     try {
                         ObjectMapper objectMapper = new ObjectMapper();
                         Map<String, Object> parsedResult = objectMapper.readValue(cleanResult, Map.class);
 
-                        // Thêm testId nếu cần
+                        // Add testId if needed
                         Map<String, Object> suggestion = (Map<String, Object>) parsedResult.get("suggestion");
                         if (suggestion != null && "test".equals(suggestion.get("type"))) {
                             String testTitle = (String) suggestion.get("testTitle");
@@ -167,7 +172,7 @@ public class MentalAnalysisController {
 
                     } catch (Exception e) {
                         e.printStackTrace();
-                        // Trả về raw nếu JSON lỗi
+                        // Return raw if JSON parsing fails
                         return ResponseEntity.ok(cleanResult);
                     }
                 }
@@ -176,9 +181,8 @@ public class MentalAnalysisController {
             e.printStackTrace();
         }
 
-        return ResponseEntity.ok("Không thể phân tích lúc này.");
+        return ResponseEntity.ok("Unable to analyze at the moment.");
     }
-
 
     private Users getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();

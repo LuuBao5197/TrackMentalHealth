@@ -53,28 +53,6 @@ public class DiaryController {
         List<Diary> diaries = diaryService.findByUserId(userId);
         return ResponseEntity.ok(diaries);
     }
-//    @PostMapping
-//    public ResponseEntity<Diary> createDiary(@RequestBody Diary diary) {
-//        if (diary.getUsers() == null || diary.getUsers().getId() == null) {
-//            return ResponseEntity.badRequest().body(null);
-//        }
-//
-//        Optional<Users> userOpt = userRepository.findById(diary.getUsers().getId());
-//        if (userOpt.isEmpty()) {
-//            return ResponseEntity.status(404).body(null);
-//        }
-//
-//        diary.setUsers(userOpt.get());
-//
-//        if (diary.getDate() == null) {
-//            diary.setDate(LocalDate.now());
-//        }
-//
-//        Diary saved = diaryService.save(diary);
-//        return ResponseEntity.ok(saved);
-//    }
-
-
 
     // Tạo nhật ký mới (gán user đang đăng nhập)
     @PostMapping
@@ -93,7 +71,7 @@ public class DiaryController {
         return ResponseEntity.ok(saved);
     }
 
-//     Cập nhật nhật ký (chỉ nếu là của user)
+    // Cập nhật nhật ký (chỉ nếu là của user)
     @PutMapping("/{id}")
     public ResponseEntity<Diary> updateDiary(@PathVariable Integer id, @RequestBody Diary diaryUpdate) {
         Users user = getCurrentUser();
@@ -109,22 +87,6 @@ public class DiaryController {
 
         return ResponseEntity.ok(diaryService.save(existing));
     }
-//    @PutMapping("/{id}")
-//    public ResponseEntity<Diary> updateDiary(@PathVariable Integer id, @RequestBody Diary diaryUpdate) {
-//        // ✅ THAY VÌ lấy user từ token, ta dùng luôn user được gửi trong diaryUpdate
-//        Optional<Diary> optionalDiary = diaryService.findById(id);
-//
-//        if (optionalDiary.isEmpty() ||
-//                !optionalDiary.get().getUsers().getId().equals(diaryUpdate.getUsers().getId())) {
-//            return ResponseEntity.status(403).build();
-//        }
-//
-//        Diary existing = optionalDiary.get();
-//        existing.setContent(diaryUpdate.getContent());
-//        existing.setDate(diaryUpdate.getDate());
-//
-//        return ResponseEntity.ok(diaryService.save(existing));
-//    }
 
     // Xóa nhật ký (chỉ nếu là của user)
     @DeleteMapping("/{id}")
