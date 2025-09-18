@@ -1,0 +1,37 @@
+flowchart TD
+    A[Client gọi API] --> B{Endpoint?}
+
+    %% GET /my
+    B -->|GET /my| C[Lấy currentUser]
+    C -->|null| C1[Trả 401 Unauthorized]
+    C -->|user OK| C2[Gọi moodService.findByUserId]
+    C2 --> C3[Trả danh sách Mood]
+
+    %% POST /
+    B -->|POST /| D[Lấy currentUser]
+    D -->|null| D1[Trả 401]
+    D -->|user OK| D2[Set user, set date nếu null]
+    D2 --> D3[Kiểm tra mâu thuẫn cảm xúc/note]
+    D3 -->|Mâu thuẫn| D4[Trả 400 + cảnh báo]
+    D3 -->|Không mâu thuẫn| D5[Gọi AI generateAISuggestion]
+    D5 --> D6[Save mood]
+    D6 --> D7[Trả Mood đã lưu]
+
+    %% PUT /{id}
+    B -->|"PUT / { id }"| E[Lấy currentUser]
+    E -->|null| E1[Trả 401]
+    E -->|user OK| E2[Set id, user]
+    E2 --> E3[Kiểm tra mâu thuẫn]
+    E3 -->|Có| E4[Trả 400]
+    E3 -->|Không| E5[AI Suggestion + Save]
+    E5 --> E6[Trả Mood đã update]
+
+    %% GET /my/statistics
+    B -->|GET /my/statistics| F[Lấy currentUser]
+    F -->|null| F1[Trả 401]
+    F -->|user OK| F2[Lấy moods, map sang điểm 1-5]
+    F2 --> F3[Trả Map<String,Integer>]
+
+    %% DELETE /{id}
+    B -->|"DELETE /{id}"| G[Gọi moodService.deleteById]
+    G --> G1[Trả 204 No Content]
