@@ -290,27 +290,42 @@ public class LoginController {
 
             Users user = optionalUser.get();
 
-            // Cập nhật thông tin
-            user.setFullname(request.getFullname());
+            // Cập nhật thông tin cơ bản
+            if (request.getFullname() != null && !request.getFullname().isBlank()) {
+                user.setFullname(request.getFullname());
+                user.setUsername(request.getFullname());
+            }
             user.setAddress(request.getAddress());
             user.setDob(request.getDob());
             user.setGender(request.getGender());
 
             // Nếu có file avatar mới
             if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
-                //Xóa ảnh cũ trên cloud
-                if(user.getAvatar() != null && !user.getAvatar().isEmpty()) {
+                // Xóa ảnh cũ trên cloud
+                if (user.getAvatar() != null && !user.getAvatar().isEmpty()) {
                     cloudinaryService.deleteFile(user.getAvatar());
                 }
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 user.setAvatar(avatarUrl);
             }
 
-            loginRepository.save(user);
-            return ResponseEntity.ok(Map.of("message", "Profile updated successfully"));
+            // 🔑 Reset otpExpiry nếu null hoặc đã hết hạn (tránh lỗi @Future)
+            if (user.getOtpExpiry() == null || user.getOtpExpiry().isBefore(LocalDateTime.now())) {
+                user.setOtpExpiry(LocalDateTime.now().plusMinutes(60));
+            }
 
+            loginRepository.save(user);
+            return ResponseEntity.ok(Map.of(
+                    "message", "Profile updated successfully",
+                    "avatar", user.getAvatar(),
+                    "fullname", user.getFullname()
+            ));
         } catch (Exception e) {
-            return ResponseEntity.status(500).body(Map.of("error", "Update failed", "details", e.getMessage()));
+            e.printStackTrace(); // in ra stacktrace đầy đủ
+            return ResponseEntity.status(500).body(Map.of(
+                    "error", "Update failed",
+                    "details", e.getMessage()
+            ));
         }
     }
 
@@ -368,6 +383,7 @@ public class LoginController {
         Random random = new Random();
         return String.valueOf(100000 + random.nextInt(900000)); // 6 digits
     }
+
     private double cosineSimilarity(double[] vec1, double[] vec2) {
         double dot = 0.0;
         double normVec1 = 0.0;

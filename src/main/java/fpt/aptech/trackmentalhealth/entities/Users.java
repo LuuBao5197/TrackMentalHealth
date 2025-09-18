@@ -114,4 +114,9 @@ public class Users {
 
     @OneToMany(mappedBy = "user")
     private Set<UserLessonProgress> userLessonProgresses = new LinkedHashSet<>();
+
+    //login with google
+    @Size(max = 50)
+    @Column(name = "provider")
+    private String provider = "LOCAL"; // mặc định là LOCAL
 }

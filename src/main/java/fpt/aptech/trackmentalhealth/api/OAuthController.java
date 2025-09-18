@@ -39,49 +39,79 @@ public class OAuthController {
             String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
             Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
 
-            String aud = (String) payload.get("aud");
-            if (!"713857311495-mvg33eppl0s6rjiju5chh0rt02ho0ltb.apps.googleusercontent.com".equals(aud)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid audience");
-            }
-
             if (payload == null || !payload.containsKey("email")) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
+            }
+
+            String aud = (String) payload.get("aud");
+            if (!"475298958238-0o73hjtvus1isu9t4f2k13n5ifnia68e.apps.googleusercontent.com".equals(aud)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid audience");
             }
 
             String email = (String) payload.get("email");
             String name = (String) payload.get("name");
             String picture = (String) payload.get("picture");
 
-            Users existingUser = loginRepository.findByEmail(email);
+            // Tìm user theo email
+            Users user = loginRepository.findByEmail(email);
 
-            if (existingUser != null) {
-                if (existingUser.getPassword() != null && !existingUser.getPassword().isEmpty()) {
-                    // User có mật khẩu => đăng ký bằng form trước đó
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                            .body("Email already registered with password. Please login using email & password.");
-                } else {
-                    // User Google cũ, cho login tiếp
-                    return handleOAuthLogin(existingUser.getEmail(), existingUser.getFullname(), existingUser.getAvatar());
-                }
-            } else {
-                // Chưa có user => tạo mới từ Google info
-                Role userRole = roleRepository.findByRoleName("USER")
+            if (user == null) {
+                // Tạo mới
+                Role role = roleRepository.findByRoleName("USER")
                         .orElseThrow(() -> new RuntimeException("Default role USER not found"));
 
-                Users user = new Users();
+                user = new Users();
                 user.setEmail(email);
                 user.setFullname(name);
+                user.setUsername(email); // hoặc để null nếu không dùng username
                 user.setAvatar(picture);
-                user.setRoleId(userRole);
-                user.setPassword(user.getPassword());
+                user.setRoleId(role);
                 user.setIsApproved(true);
-                loginRepository.save(user);
+                // có thể thêm cột provider
+                 user.setProvider("GOOGLE");
 
-                return handleOAuthLogin(email, name, picture);
+                loginRepository.save(user);
+            } else {
+                boolean hasPassword = user.getPassword() != null && !user.getPassword().isBlank();
+
+                if (hasPassword) {
+                    // user đã có account LOCAL -> liên kết thêm GOOGLE
+                    if (!user.getProvider().contains("GOOGLE")) {
+                        user.setProvider(user.getProvider() + ",GOOGLE");
+                    }
+                } else {
+                    // user chưa có password (tạo từ social trước đó)
+                    if (!user.getProvider().contains("GOOGLE")) {
+                        user.setProvider("GOOGLE");
+                    }
+                }
+
+                if (user.getFullname() == null) user.setFullname(name);
+                if (user.getAvatar() == null && picture != null) user.setAvatar(picture);
+
+                loginRepository.save(user);
             }
 
+            // Tạo JWT
+            String jwt = jwtUtils.generateToken(email, user, null);
+
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("fullname", user.getFullname());
+            userData.put("email", user.getEmail());
+            userData.put("avatar", user.getAvatar());
+            userData.put("role", user.getRoleId().getRoleName());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", jwt);
+            result.put("user", userData);
+
+            return ResponseEntity.ok(result);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Google OAuth failed: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Google OAuth failed: " + e.getMessage());
         }
     }
 
