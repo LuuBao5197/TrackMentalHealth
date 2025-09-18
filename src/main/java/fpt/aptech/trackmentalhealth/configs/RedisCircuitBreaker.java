@@ -12,6 +12,13 @@ public class RedisCircuitBreaker {
     private AtomicInteger failureCount = new AtomicInteger(0);
     private Instant lastFailureTime;
 
+    public void reset() {
+
+        this.state = State.CLOSED;
+        this.failureCount = new AtomicInteger(0);
+        // ...
+        System.out.println("Circuit Breaker has been reset.");
+    }
     public synchronized boolean allowRequest() {
         if (state == State.OPEN) {
             if (Instant.now().isAfter(lastFailureTime.plusMillis(openTimeoutMs))) {

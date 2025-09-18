@@ -1,6 +1,7 @@
 package fpt.aptech.trackmentalhealth.configs;
 
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
 import java.util.function.Supplier;
@@ -76,7 +77,7 @@ import java.util.function.Supplier;
 //}
 
 @Service
-public class RedisCacheService {
+public class                                          RedisCacheService {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final RedisCircuitBreaker breaker = new RedisCircuitBreaker();
@@ -132,6 +133,26 @@ public class RedisCacheService {
         }
     }
 
+    // ✅ THÊM PHƯƠNG THỨC MỚI VÀO ĐÂY
+    public boolean isKeyExist(String groupKey, String key) {
+        // Luôn kiểm tra an toàn trước khi thao tác với Redis
+        if (!redisAvailable || !breaker.allowRequest()) {
+            return false; // Nếu Redis không sẵn sàng, coi như không có key
+        }
+
+        String redisKey = groupKey + "::" + key;
+
+        try {
+            // Dùng hasKey của RedisTemplate để kiểm tra
+            return redisTemplate.hasKey(redisKey);
+        } catch (Exception e) {
+            // Nếu có lỗi, đánh dấu Redis offline và fallback
+            System.err.println("⚠️ Redis HASKEY error: " + e.getMessage());
+            redisAvailable = false;
+            breaker.recordFailure();
+            return false; // Coi như không có key khi có lỗi
+        }
+    }
     public void put(String key, Object value) {
         if (!redisAvailable || !breaker.allowRequest()) return;
         try {
@@ -162,6 +183,25 @@ public class RedisCacheService {
         } catch (Exception e) {
             redisAvailable = false;
             breaker.recordFailure();
+        }
+    }
+
+    @Scheduled(fixedDelay = 30000) // Chạy mỗi 30 giây (30000 ms)
+    public void checkRedisHealth() {
+        // Chỉ kiểm tra khi hệ thống đang ghi nhận Redis bị lỗi
+        if (!redisAvailable) {
+            System.out.println("Attempting to reconnect to Redis...");
+            try {
+                // Gửi một lệnh PING đơn giản để kiểm tra kết nối
+                redisTemplate.getConnectionFactory().getConnection().ping();
+
+                // Nếu không có exception, tức là Redis đã sống lại
+                System.out.println("✅ Redis connection re-established.");
+                this.redisAvailable = true; // Bật lại cờ
+                this.breaker.reset();      // Reset lại circuit breaker
+            } catch (Exception e) {
+                System.out.println("Redis is still down. Will try again later.");
+            }
         }
     }
 }

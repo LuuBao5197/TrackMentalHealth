@@ -14,4 +14,5 @@ public class FullTestDTO implements Serializable {
     private String instructions;
     private List<QuestionDTO> questions;
     private Boolean hasResult;
+    private String source; // ✅ Trường mới để hiển thị nguồn
 }

@@ -42,7 +42,7 @@ public class QuizServiceImpl implements QuizService {
             quizDTO.setDescription(quiz.getDescription());
             quizDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
             quizDTO.setTimeLimit(quiz.getTimeLimit());
-            quizDTO.setHasResults(quiz.getQuizResults() != null);
+            quizDTO.setHasResults(quiz.getQuizResults() != null && !quiz.getQuizResults().isEmpty());
             quizDTOList.add(quizDTO);
         }
         // ✅ Truyền thêm pageable và totalElements
@@ -106,7 +106,7 @@ public class QuizServiceImpl implements QuizService {
             quizDTO.setDescription(quiz.getDescription());
             quizDTO.setNumberOfQuestions(quiz.getNumberOfQuestions());
             quizDTO.setTimeLimit(quiz.getTimeLimit());
-            quizDTO.setHasResults(quiz.getQuizResults() != null);
+            quizDTO.setHasResults(quiz.getQuizResults() != null && !quiz.getQuizResults().isEmpty());
             quizDTOList.add(quizDTO);
         }
         return new PageImpl<>(quizDTOList, pageable, quizzes.getTotalElements());

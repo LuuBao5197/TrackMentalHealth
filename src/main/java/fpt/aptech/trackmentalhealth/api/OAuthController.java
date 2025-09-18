@@ -44,7 +44,7 @@ public class OAuthController {
             }
 
             String aud = (String) payload.get("aud");
-            if (!"475298958238-0o73hjtvus1isu9t4f2k13n5ifnia68e.apps.googleusercontent.com".equals(aud)) {
+            if (!"713857311495-mvg33eppl0s6rjiju5chh0rt02ho0ltb.apps.googleusercontent.com".equals(aud)) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid audience");
             }
 
@@ -115,6 +115,87 @@ public class OAuthController {
         }
     }
 
+    @PostMapping("/google-web")
+    public ResponseEntity<?> loginWithGoogleWeb(@RequestParam String idToken) {
+        try {
+            String url = "https://oauth2.googleapis.com/tokeninfo?id_token=" + idToken;
+            Map<String, Object> payload = restTemplate.getForObject(url, Map.class);
+
+            if (payload == null || !payload.containsKey("email")) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid Google token");
+            }
+
+            String aud = (String) payload.get("aud");
+            if (!"475298958238-0o73hjtvus1isu9t4f2k13n5ifnia68e.apps.googleusercontent.com".equals(aud)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid audience");
+            }
+
+            String email = (String) payload.get("email");
+            String name = (String) payload.get("name");
+            String picture = (String) payload.get("picture");
+
+            // Tìm user theo email
+            Users user = loginRepository.findByEmail(email);
+
+            if (user == null) {
+                // Tạo mới
+                Role role = roleRepository.findByRoleName("USER")
+                        .orElseThrow(() -> new RuntimeException("Default role USER not found"));
+
+                user = new Users();
+                user.setEmail(email);
+                user.setFullname(name);
+                user.setUsername(email); // hoặc để null nếu không dùng username
+                user.setAvatar(picture);
+                user.setRoleId(role);
+                user.setIsApproved(true);
+                // có thể thêm cột provider
+                user.setProvider("GOOGLE");
+
+                loginRepository.save(user);
+            } else {
+                boolean hasPassword = user.getPassword() != null && !user.getPassword().isBlank();
+
+                if (hasPassword) {
+                    // user đã có account LOCAL -> liên kết thêm GOOGLE
+                    if (!user.getProvider().contains("GOOGLE")) {
+                        user.setProvider(user.getProvider() + ",GOOGLE");
+                    }
+                } else {
+                    // user chưa có password (tạo từ social trước đó)
+                    if (!user.getProvider().contains("GOOGLE")) {
+                        user.setProvider("GOOGLE");
+                    }
+                }
+
+                if (user.getFullname() == null) user.setFullname(name);
+                if (user.getAvatar() == null && picture != null) user.setAvatar(picture);
+
+                loginRepository.save(user);
+            }
+
+            // Tạo JWT
+            String jwt = jwtUtils.generateToken(email, user, null);
+
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("id", user.getId());
+            userData.put("fullname", user.getFullname());
+            userData.put("email", user.getEmail());
+            userData.put("avatar", user.getAvatar());
+            userData.put("role", user.getRoleId().getRoleName());
+
+            Map<String, Object> result = new HashMap<>();
+            result.put("token", jwt);
+            result.put("user", userData);
+
+            return ResponseEntity.ok(result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Google OAuth failed: " + e.getMessage());
+        }
+    }
 
     // ========================= FACEBOOK =========================
     @PostMapping("/facebook")

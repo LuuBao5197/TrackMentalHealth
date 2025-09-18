@@ -224,9 +224,9 @@ public class TestController {
     }
     // api import file excel (xlsx) de tao bo cau hoi
     @PostMapping("/import-test")
-    public ResponseEntity<?> importTest(@RequestParam("file") MultipartFile file) {
+    public ResponseEntity<?> importTest(@RequestParam("file") MultipartFile file,  @RequestParam("userId") Integer userId) {
         try {
-            List<String> result = testImportService.importFromFile(file, 1);
+            List<String> result = testImportService.importFromFile(file, userId);
             return ResponseEntity.ok(result);
         } catch (TestImportValidationException ex) {
             return ResponseEntity.badRequest().body(ex.getErrors());

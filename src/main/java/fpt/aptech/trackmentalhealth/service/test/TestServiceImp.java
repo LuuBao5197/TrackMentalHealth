@@ -57,24 +57,37 @@ public class TestServiceImp implements TestService {
 //            key = "'page=' + #pageable.pageNumber + ',size=' + #pageable.pageSize"
 //    )
     public Page<FullTestDTO> getTests(Pageable pageable) {
-       String cacheKey = "page=" + pageable.getPageNumber() + ",size=" + pageable.getPageSize();
-       return redisCacheService.get("tests", cacheKey, ()-> {
-           System.out.println(">>> Query DB getTests");
-           Page<Test> testPage = testRepository.findAll(pageable);
-           List<Test> testsList = testPage.getContent();
-           List<FullTestDTO> fullTestDTOList = new ArrayList<>();
-           for (Test test : testsList) {
-               FullTestDTO fullTestDTO = new FullTestDTO();
-               fullTestDTO.setId(Long.valueOf(test.getId()));
-               fullTestDTO.setTitle(test.getTitle());
-               fullTestDTO.setDescription(test.getDescription());
-               fullTestDTO.setInstructions(test.getInstructions());
-               fullTestDTO.setHasResult(!test.getResults().isEmpty());
-               fullTestDTOList.add(fullTestDTO);
-           }
-           Page<FullTestDTO> fullTestDTOPage = new PageImpl<>(fullTestDTOList, testPage.getPageable(), testPage.getTotalElements());
-           return fullTestDTOPage;
-       });
+        // 1. Dùng key tương tự như logic trước để kiểm tra cache
+        String cacheKey = "page=" + pageable.getPageNumber() + ",size=" + pageable.getPageSize();
+        String groupKey = "tests";
+
+        // 2. Kiểm tra xem key có tồn tại trong cache hay không
+        boolean isFromCache = redisCacheService.isKeyExist(groupKey, cacheKey);
+        Page<FullTestDTO> fullTestDTOPage = redisCacheService.get(groupKey, cacheKey, () -> {
+            System.out.println(">>> Cache miss! Querying from DATABASE...");
+            Page<Test> testPage = testRepository.findAll(pageable);
+            // Chuyển đổi và gán nhãn "DATABASE" khi phải gọi DB
+            return testPage.map(test -> {
+                FullTestDTO dto = new FullTestDTO();
+                // ... map các trường dữ liệu khác (id, title, description, ...)
+                dto.setId(Long.valueOf(test.getId()));
+                dto.setTitle(test.getTitle());
+                dto.setDescription(test.getDescription());
+                dto.setInstructions(test.getInstructions());
+                dto.setHasResult(!test.getResults().isEmpty());
+
+                // Gán nhãn nguồn là từ DATABASE
+                dto.setSource("FROM DATABASE 🐘");
+                return dto;
+            });
+        });
+        // 4. Nếu dữ liệu lấy từ cache, cập nhật lại nhãn để chứng minh
+        if (isFromCache) {
+            System.out.println("<<< Cache hit! Data retrieved FROM CACHE (Redis).");
+            fullTestDTOPage.getContent().forEach(dto -> dto.setSource("FROM CACHE (Redis) ⚡️"));
+        }
+        return fullTestDTOPage;
+
     }
 
     @Override
