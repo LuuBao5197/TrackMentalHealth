@@ -32,6 +32,9 @@ public class Exercise {
     @Column(name = "instruction")
     private String instruction;
 
+    @Column(name = "difficulty_level")
+    private String difficultyLevel; // VD: EASY, MEDIUM, HARD
+    
     @Lob
     @Column(name = "media_url")
     private String mediaUrl;

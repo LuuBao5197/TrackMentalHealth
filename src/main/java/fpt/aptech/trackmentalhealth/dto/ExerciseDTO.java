@@ -22,6 +22,7 @@ public class ExerciseDTO {
     private String status;
     private Instant createdAt;
     private String photo;
+    private String difficultyLevel;
 
     private List<ExerciseConditionDTO> conditions; // 👈 thêm danh sách condition
 
@@ -39,6 +40,7 @@ public class ExerciseDTO {
         this.createdById = (exercise.getCreatedBy() != null) ? exercise.getCreatedBy().getId() : null;
         this.status = exercise.getStatus();
         this.createdAt = exercise.getCreatedAt();
+        this.difficultyLevel = exercise.getDifficultyLevel();
 
         // 👇 map ExerciseCondition sang DTO
         if(exercise.getConditions() != null) {

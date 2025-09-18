@@ -71,8 +71,8 @@ public class FaceController {
 
     // Login bằng faceId (Flutter gửi userId sau khi Flask verify xong)
     @PostMapping("/login-face")
-    public ResponseEntity<?> loginByFace(@RequestParam Integer userId) {
-        Map<String, String> result = userService.loginUsersByFaceId(userId);
+    public ResponseEntity<?> loginByFace(@RequestParam String email) {
+        Map<String, String> result = userService.loginUsersByFaceId(email);
         if (result != null) {
             return ResponseEntity.ok(result);
         }

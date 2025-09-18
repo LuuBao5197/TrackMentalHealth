@@ -1,0 +1,14 @@
+flowchart TD
+    A[Client gọi GET /api/mental/analyze] --> B[Lấy currentUser]
+    B -->|null| C[Trả 401 Unauthorized]
+    B -->|user OK| D[Lấy mood 14 ngày gần nhất]
+    D --> E[Lấy diary 14 ngày gần nhất]
+    E --> F[Lấy tất cả Test từ DB]
+    F --> G[Tạo prompt chứa moods + diaries + tests]
+    G --> H[Gọi OpenAI API GPT-4o-mini]
+    H -->|OK + JSON| I[Parse JSON]
+    I -->|type = test| J[Thêm testId tương ứng]
+    I -->|type = emergency| K[Giữ nguyên]
+    J --> L[Trả JSON kết quả]
+    K --> L
+    H -->|Lỗi hoặc không trả JSON| M[Trả raw text hoặc báo lỗi]
